@@ -6,7 +6,8 @@ module.exports = {
             }
         },
         fontFamily: {
-            'sans': ['Nunito']
+            'sans': ['Nunito'],
+            'work-sans': ["Work Sans"]
         }
     },
     variants: {

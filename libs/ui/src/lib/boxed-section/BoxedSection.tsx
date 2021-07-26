@@ -4,7 +4,7 @@ export default tw.section`
     bg-bg-grey
     flex
     flex-col
-    justify-center
+    items-center
     border-2
     border-black
     p-7

@@ -44,7 +44,7 @@ const storyCarousel: React.FC<IUserStoryCarousel> = ({ stories }) => {
     )
 
     return (
-        <BoxedSpan>
+        <BoxedSpan light={true}>
             <SectionHeader>Overheard</SectionHeader>
             <SectionSubheader>on Who Said True?</SectionSubheader>
             <Carousel

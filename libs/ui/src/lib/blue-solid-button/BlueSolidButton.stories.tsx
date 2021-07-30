@@ -19,15 +19,11 @@ export default {
     }
 } as Meta;
 
-const someFunc = (val: SolidButtonProps): boolean => {
-    const { light } = val;
-    return light as boolean;
-}
 
 const Template: Story<SolidButtonProps> = (args) => {
 
     return (
-        <Button {...args} light>Login or Sign up</Button>
+        <Button {...args}>Login or Sign up</Button>
     )
 }
 

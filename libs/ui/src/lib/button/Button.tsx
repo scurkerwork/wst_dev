@@ -15,17 +15,9 @@ export interface ButtonProps {
 const colorHelper = (color: ButtonColor, border: boolean | undefined): string => {
     const borderBase = "border-2 bg-white";
     if (color === "primary") {
-        if (border) {
-            return `${borderBase} text-primary border-primary`
-        } else {
-            return "bg-primary text-white"
-        }
+        return border ? `${borderBase} text-primary border-primary` : "bg-primary text-white"
     } else {
-        if (border) {
-            return `${borderBase} text-subtle-stroke border-subtle-stroke`
-        } else {
-            return "bg-subtle-stroke text-white"
-        }
+        return border ? `${borderBase} text-subtle-stroke border-subtle-stroke` : "bg-subtle-stroke text-white"
     }
 }
 

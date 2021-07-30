@@ -1,11 +1,45 @@
-import Button from './Button';
+import Button, { ButtonProps } from './Button';
+import { Story, Meta } from '@storybook/react';
 
 export default {
     component: Button,
-    title: "Button"
-}
+    title: "Button",
+    argTypes: {
+        color: {
+            type: 'select',
+            options: ["primary", "sublte-stroke"],
+            default: 'primary'
+        },
+        small: {
+            type: 'boolean',
+            default: false
+        },
+        border: {
+            type: 'boolean',
+            default: false
+        },
+        pill: {
+            type: 'boolean',
+            default: false
+        },
+        boxShadow: {
+            type: 'select',
+            options: ['shadow-sm', 'shadow', 'shadow-md', 'shadow-lg', 'shadow-xl', 'shadow-2xl']
+        }
 
-export const SolidPrimary = () => <Button color="primary">Solid Primary</Button>
+    }
+
+} as Meta;
+
+const Template: Story<ButtonProps> = (args) => <Button {...args}>Button Component</Button>
+
+export const ButtonComponent = Template.bind({});
+ButtonComponent.args = {
+    color: "primary",
+    small: false,
+    border: false,
+    pill: false
+}
 
 export const SolidSubtleStroke = () => <Button color="subtle-stroke">Subtle Stroke</Button>
 

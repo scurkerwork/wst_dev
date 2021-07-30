@@ -7,7 +7,7 @@ export default {
     argTypes: {
         color: {
             type: 'select',
-            options: ["primary", "sublte-stroke"],
+            options: ["primary", "subtle-stroke"],
             default: 'primary'
         },
         small: {

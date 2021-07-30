@@ -21,7 +21,6 @@ export default {
 
 
 const Template: Story<SolidButtonProps> = (args) => {
-    const t = ""
     return (
         <Button {...args}>Login or Sign up</Button>
     )

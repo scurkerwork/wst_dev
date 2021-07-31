@@ -5,10 +5,10 @@ import { ThemeColor, Extends } from "@whosaidtrue/app-interfaces";
 export type ButtonColor = Extends<ThemeColor, "primary" | "subtle-stroke">;
 
 export interface ButtonProps {
-    border?: boolean;
-    small?: boolean;
+    $border?: boolean;
+    $small?: boolean;
     color: ButtonColor;
-    pill?: boolean;
+    $pill?: boolean;
     boxShadow?: 'shadow-sm' | 'shadow' | 'shadow-md' | 'shadow-lg' | 'shadow-xl' | 'shadow-2xl'
 }
 
@@ -24,9 +24,9 @@ const colorHelper = (color: ButtonColor, border: boolean | undefined): string =>
 export default tw.button<ButtonProps>`
     box-content
     ${(p) => p.boxShadow ? p.boxShadow : ""}
-    ${(p) => p.small ? "py-1 px-2 text-sm" : "py-4 px-8"}
-    ${(p) => colorHelper(p.color, p.border)}
-    ${(p) => p.pill ? "rounded-full" : "rounded-lg"}
+    ${(p) => p.$small ? "py-1 px-2 text-sm" : "py-4 px-8"}
+    ${(p) => colorHelper(p.color, p.$border)}
+    ${(p) => p.$pill ? "rounded-full" : "rounded-lg"}
 
 
 `

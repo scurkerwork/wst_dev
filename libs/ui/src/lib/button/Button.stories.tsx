@@ -1,4 +1,5 @@
 import Button, { ButtonProps } from './Button';
+import { THEME_COLORS } from "@whosaidtrue/util";
 import { Story, Meta } from '@storybook/react';
 
 export default {
@@ -7,7 +8,7 @@ export default {
     argTypes: {
         color: {
             type: 'select',
-            options: ["primary", "subtle-stroke"],
+            options: THEME_COLORS,
             default: 'primary'
         },
         $small: {

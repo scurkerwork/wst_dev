@@ -15,6 +15,6 @@ const Styled = tw.input`
     cursor-pointer
 `
 
-const DigitInput: React.FC = (props) => <Styled type="text" maxLength={1} size={1} min={0} max={9} pattern="[0-9]{1}" />
+const DigitInput: React.FC = (props) => <Styled {...props} type="text" maxLength={1} size={1} min={0} max={9} pattern="[0-9]{1}" />
 
 export default DigitInput

@@ -14,7 +14,7 @@ interface IRenderArrow {
     (clickHandler: () => void, hasNext: boolean, label: string): React.ReactNode
 }
 
-const storyCarousel: React.FC<CarouselProps> = ({ title, children }) => {
+const StoryCarousel: React.FC<CarouselProps> = ({ title, children }) => {
 
     // use inline css for more fine grained control than tailwind provides.
     const arrowStyles: CSSProperties = {
@@ -51,4 +51,4 @@ const storyCarousel: React.FC<CarouselProps> = ({ title, children }) => {
     )
 }
 
-export default storyCarousel;
+export default StoryCarousel;

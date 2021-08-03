@@ -3,7 +3,7 @@ import { FaFacebook } from '@react-icons/all-files/fa/FaFacebook';
 import { FaTwitter } from '@react-icons/all-files/fa/FaTwitter';
 import { FaInstagram } from '@react-icons/all-files/fa/FaInstagram';
 
-import { BodySmall } from '../typography/typography';
+import { BodySmall } from '../typography/Typography';
 
 export interface ISocialLinksProps {
     fbook: string;

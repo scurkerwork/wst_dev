@@ -7,9 +7,9 @@ services:
     image: postgres:11
     container_name: postgres
     environment:
-      POSTGRES_USER: root
+      POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password
-      POSTGRES_DB: sequelize
+      POSTGRES_DB: whosaidtrue-dev
     ports:
       - '5432:5432'
     volumes:

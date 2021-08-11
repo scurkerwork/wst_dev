@@ -88,7 +88,7 @@ The following is a comprehensive list of the current list of tables in the Datab
 id | integer | no | yes
 email | varchar(1000) | no | yes
 password | varchar(1000) | no | no
-roles | user_role[] | no | no | ["user"]
+roles | user_role[] | no | no |
 questionDeckCredits | smallint | no | no | 0
 testAccount | boolean | no | no | false
 notifications | boolean | no | no | false
@@ -96,10 +96,19 @@ language | varchar(50) | no | no | "en-US"
 gender | varchar(50) | yes | no
 ageRange | varchar(20) | no | no
 appDownloaded | boolean | no | no | false
-createdAt | timestamp | no | no | now()
-updatedAt | timestamp | no | no | now()
+created_at | timestamp | no | no | now()
+updated_at | timestamp | no | no | now()
 
 <br />
+
+### **hosts**
+| Column Name | Type | Can Be Null | Unique | Default | Reference | On Delete Reference
+---| --- | --- | --- | --- | --- | ---
+id | integer | no | yes
+gameId | no | no | | games | CASCADE
+playerId | no | no | | game_players | CASCADE
+created_at | timestamp | no | no | now()
+updated_at | timestamp | no | no | now()
 
 ### **decks**
 
@@ -117,8 +126,8 @@ description | text | no | no
 purchasePrice | money | no | no
 exampleQuestion | text | no | no
 thumbnailURL | varchar(1000) | no | no
-createdAt | timestamp | no | no | now()
-updatedAt | timestamp | no | no | now()
+created_at | timestamp | no | no | now()
+updated_at | timestamp | no | no | now()
 
 <br />
 
@@ -128,12 +137,11 @@ updatedAt | timestamp | no | no | now()
 ---| --- | --- | --- | --- | --- | ---
 id | integer | no | yes
 accessCode | varchar(200) | yes | yes
-hostId | integer | yes | no | | game_players | SET NULL
 status | varchar(100) | no | no
 startDate | timestamp | no | no
 endDate | timestamp | no | no
-createdAt | timestamp | no | no | now()
-updatedAt | timestamp | no | no | now()
+created_at | timestamp | no | no | now()
+updated_at | timestamp | no | no | now()
 
 <br />
 
@@ -148,8 +156,8 @@ followUp | text | no | no
 deckId | integer | no | no | | decks | CASCADE
 ageRating | smallint | no | no
 status | question_status | no | no
-createdAt | timestamp | no | no | now()
-updatedAt | timestamp | no | no | now()
+created_at | timestamp | no | no | now()
+updated_at | timestamp | no | no | now()
 
 <br />
 
@@ -160,8 +168,8 @@ updatedAt | timestamp | no | no | now()
 id | integer | no | yes
 playerName | varchar(200) | no | no
 gameId | integer | no | no | | games | CASCADE
-createdAt | timestamp | no | no | now()
-updatedAt | timestamp | no | no | now()
+created_at | timestamp | no | no | now()
+updated_at | timestamp | no | no | now()
 
 <br />
 
@@ -172,8 +180,8 @@ updatedAt | timestamp | no | no | now()
 id | integer | no | yes
 userId | integer | no | no | | users | CASCADE
 gameId | integer | no | no | | games | CASCADE
-createdAt | timestamp | no | no | now()
-updatedAt | timestamp | no | no | now()
+created_at | timestamp | no | no | now()
+updated_at | timestamp | no | no | now()
 
 <br />
 
@@ -186,8 +194,8 @@ questionSequenceIndex | smallint | no | no
 questionId | integer | yes | no | | questions | SET_NULL
 readerId | integer | yes | no | | game_players | SET_NULL
 gameId | integer | no | no | | games | CASCADE
-createdAt | timestamp | no | no | now()
-updatedAt | timestamp | no | no | now()
+created_at | timestamp | no | no | now()
+updated_at | timestamp | no | no | now()
 
 <br />
 
@@ -199,8 +207,8 @@ id | integer | no | yes
 name | varchar(200) | no | yes
 clean | boolean | no | no
 timesDisplayed | integer | no | no | 0
-createdAt | timestamp | no | no | now()
-updatedAt | timestamp | no | no | now()
+created_at | timestamp | no | no | now()
+updated_at | timestamp | no | no | now()
 
 <br />
 
@@ -215,8 +223,8 @@ gamePlayerId | integer | no | no | | game_players | CASCADE
 value | answer | no | no
 numberTrueGuess | smallint | yes | no
 score | smallint | yes | no
-createdAt | timestamp | no | no | now()
-updatedAt | timestamp | no | no | now()
+created_at | timestamp | no | no | now()
+updated_at | timestamp | no | no | now()
 
 <br />
 
@@ -227,8 +235,8 @@ updatedAt | timestamp | no | no | now()
 id | integer | no | yes
 userId | integer | no | no | | users | CASCADE
 deckId | integer | no | no | | decks | CASCADE
-createdAt | timestamp | no | no | now()
-updatedAt | timestamp | no | no | now()
+created_at | timestamp | no | no | now()
+updated_at | timestamp | no | no | now()
 
 <br />
 
@@ -239,8 +247,8 @@ updatedAt | timestamp | no | no | now()
 id | integer | no | yes
 userId | integer | yes | no | | users | SET NULL
 ipAddress | cidr | no | no
-createdAt | timestamp | no | no | now()
-updatedAt | timestamp | no | no | now()
+created_at | timestamp | no | no | now()
+updated_at | timestamp | no | no | now()
 
 <br />
 
@@ -263,12 +271,12 @@ Some convenience functions have been added to use as triggers, and to make the d
 
 <br />
 
-### update_updatedAt_column
+### update_updated_at_column
 
  - *parameters:* none
  - *returns:* row value
 
-This function is run by update triggers on each table. It updates the updatedAt column after any updates have been perfermed if and only if the update query successfully modified the row. If an update query is sent, but no values change, then the function doesn't do anything.
+This function is run by update triggers on each table. It updates the updated_at column after any updates have been perfermed if and only if the update query successfully modified the row. If an update query is sent, but no values change, then the function doesn't do anything.
 
 ### number_true_answers
 
@@ -286,10 +294,10 @@ SELECT number_true_answers(GAME_ID) # returns the calculated value as an integer
 ## Triggers
 ----
 
-### **update_updatedAt_trigger**
-- *function:* update_updatedAt_column
+### **update_updated_at_trigger**
+- *function:* update_updated_at_column
 
-Sets the updatedAt column of modified rows to the current time if and only if the row was modified.
+Sets the updated_at column of modified rows to the current time if and only if the row was modified.
 
 Every table has a copy of this trigger. It runs after every update operation.
 
@@ -311,6 +319,7 @@ table | columns | unique
 | game_players | playerName, gameId | yes
 | game_answers | gameQuestionId, gamePlayerId | yes
 | user_decks | userId | no
+| hosts | gameId | no
 
 <br/>
 

@@ -78,13 +78,13 @@ There, enter the credentials listed in `docker-compose.yml`:
 - **email**: address@email.com
 - **password**: secret
 
-![login-screen](./docs/login.png)
+![login-screen](docs/login.png)
 
 Once you get in, click on `Object > Create > Server`.
 
 Here, you can create a connection to the Postgres container. In the `General` tab, give the server a name.
 
-![server-name](./docs/name.png)
+![server-name](docs/name.png)
 
 Then, in the `Connection` tab, enter the information for the database you are working on. For development, make sure these match the values in the `docker-compose.yml` file.
 
@@ -93,7 +93,7 @@ Then, in the `Connection` tab, enter the information for the database you are wo
 - **Username**: postgres
 - **Password**: password
 
-![connection-tab](./docs/connection.png)
+![connection-tab](docs/connection.png)
 
 Here you can see everything that is going on in the database.
 
@@ -120,7 +120,7 @@ updated_at | timestamp | no | no | now()
 
 <br />
 
-### **hosts**
+### **game_hosts**
 | Column Name | Type | Can Be Null | Unique | Default | Reference | On Delete Reference
 ---| --- | --- | --- | --- | --- | ---
 id | integer | no | yes

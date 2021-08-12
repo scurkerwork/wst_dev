@@ -132,7 +132,7 @@ export async function up(pgm: MigrationBuilder): Promise<void> {
     })
 
     // hosts
-    pgm.createTable('hosts', {
+    pgm.createTable('game_hosts', {
         id: 'id',
         game_id: {
             type: 'integer',
@@ -338,10 +338,6 @@ export async function up(pgm: MigrationBuilder): Promise<void> {
         status: { type: 'varchar(100)', notNull: true },
         user_id: { type: 'integer', notNull: true, references: 'users', onDelete: 'NO ACTION' },
         deck_id: { type: 'integer', notNull: true, references: 'decks', onDelete: 'NO ACTION' },
-        original_price: { type: 'money', notNull: true },
-        total_taxes: { type: 'money', notNull: true, default: 0 },
-        total_fees: { type: 'money', notNull: true, default: 0 },
-        total_discounts: { type: 'money', notNull: true, default: 0 },
         purchase_price: { type: 'money', notNull: true },
         fulfilled_on: { type: 'timestamp', notNull: false },
         created_at: {
@@ -354,44 +350,7 @@ export async function up(pgm: MigrationBuilder): Promise<void> {
             notNull: true,
             default: pgm.func('current_timestamp'),
         }
-    })
-
-    // sales
-    pgm.createTable('sales', {
-        id: 'id',
-        discount_percent: { type: 'decimal', notNull: false, default: null, check: 'discount_flat = NULL' },
-        discount_flat: { type: 'money', notNull: false, default: null, check: 'discount_percent = NULL' },
-        start_date: { type: 'timestamp', notNull: true, default: '-infinity' },
-        end_date: { type: 'timestamp', notNull: true, default: 'infinity' },
-        created_at: {
-            type: 'timestamp',
-            notNull: true,
-            default: pgm.func('current_timestamp'),
-        },
-        updated_at: {
-            type: 'timestamp',
-            notNull: true,
-            default: pgm.func('current_timestamp'),
-        }
-    })
-
-    // order_sale
-    pgm.createTable('order_sales', {
-        id: 'id',
-        sale_id: { type: 'integer', notNull: true, references: 'sales', onDelete: 'NO ACTION' },
-        order_id: { type: 'integer', notNull: true, references: 'orders', onDelete: 'CASCADE' },
-        created_at: {
-            type: 'timestamp',
-            notNull: true,
-            default: pgm.func('current_timestamp'),
-        },
-        updated_at: {
-            type: 'timestamp',
-            notNull: true,
-            default: pgm.func('current_timestamp'),
-        }
-    })
-
+    });
 
     /**
     * ======================================

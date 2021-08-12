@@ -124,8 +124,8 @@ updated_at | timestamp | no | no | now()
 | Column Name | Type | Can Be Null | Unique | Default | Reference | On Delete Reference
 ---| --- | --- | --- | --- | --- | ---
 id | integer | no | yes
-game_id | no | no | | games | CASCADE
-player_id | no | no | | game_players | CASCADE
+game_id | no | no | | | games | CASCADE
+player_id | no | no | | | game_players | CASCADE
 created_at | timestamp | no | no | now()
 updated_at | timestamp | no | no | now()
 

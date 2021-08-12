@@ -278,38 +278,8 @@ updated_at | timestamp | no | no | now()
 id | integer | no | yes
 user_id | integer | yes | no | | users | SET NULL
 deck_id | integer | yes | no | | decks | SET NULL
-original_price | money | no | no
-total_taxes | money | no | no | 0
-total_fees | money | no | no | 0
-total_discounts | money | no | no | 0
 purchase_price | money | no | no
 fulfilled_on | timestamp | yes | no
-created_at | timestamp | no | no | now()
-updated_at | timestamp | no | no | now()
-
-<br />
-
-### **sales**
-
-| Column Name | Type | Can Be Null | Unique | Default | Reference | On Delete Reference
----| --- | --- | --- | --- | --- | ---
-id | integer | no | yes
-discount_percent | decimal | yes (must be null if discount_flat isn't) | no | null
-discount_flat | decimal | yes (must be null if discount_percent isn't) | no | null
-start_date | timestamp | no | no | -infinity
-end_date | timestamp | no | no | infinity
-created_at | timestamp | no | no | now()
-updated_at | timestamp | no | no | now()
-
-<br />
-
-### **order_sales**
-
-| Column Name | Type | Can Be Null | Unique | Default | Reference | On Delete Reference
----| --- | --- | --- | --- | --- | ---
-id | integer | no | yes
-sale_id | integer | yes | no | | sales | SET NULL
-order_id | integer | no | no | | orders | CASCADE
 created_at | timestamp | no | no | now()
 updated_at | timestamp | no | no | now()
 

@@ -29,11 +29,6 @@ export async function up(pgm: MigrationBuilder): Promise<void> {
         roles: { type: 'user_role[]', notNull: true }, // custom type
         question_deck_credits: { type: 'smallint', notNull: true, default: 0 },
         test_account: { type: 'boolean', notNull: true, default: false },
-        notifications: { type: 'boolean', notNull: true, default: false },
-        language: { type: 'varchar(50)', notNull: true, default: 'en-US' }, // rules for language tags defined in https://datatracker.ietf.org/doc/html/rfc4647 and https://datatracker.ietf.org/doc/html/rfc5646
-        gender: { type: 'char(10)', notNull: false }, // TODO: create custom type?
-        age_range: { type: 'varchar(20)', notNull: true }, // TODO: create custom type? Maybe split into 2 integer fields?
-        app_downloaded: { type: 'boolean', notNull: true, default: false },
         created_at: {
             type: 'timestamp',
             notNull: true,
@@ -76,7 +71,6 @@ export async function up(pgm: MigrationBuilder): Promise<void> {
     pgm.createTable('games', {
         id: 'id',
         access_code: { type: 'varchar(200)', notNull: false, unique: true },
-
         status: { type: 'varchar(100)', notNull: true }, // TODO: create custom type? what are the possible values?
         start_date: { type: 'timestamp', notNull: false },
         end_date: { type: 'timestamp', notNull: false },
@@ -162,14 +156,6 @@ export async function up(pgm: MigrationBuilder): Promise<void> {
             notNull: true,
             default: pgm.func('current_timestamp'),
         }
-    })
-
-    // user_deck_rating
-    pgm.createTable('user_deck_rating', {
-        id: 'id',
-        deck_id: { type: 'integer', notNull: true, references: 'decks', onDelete: 'CASCADE' },
-        user_id: { type: 'integer', notNull: false, references: 'users', onDelete: 'SET NULL' },
-        rating: { type: 'user_rating', notNull: true }
     })
 
     // user_question_rating
@@ -555,6 +541,7 @@ export async function up(pgm: MigrationBuilder): Promise<void> {
     pgm.createIndex('game_questions', ['game_id', 'question_sequence_index'], { unique: true });
     pgm.createIndex('game_players', ['player_name', 'game_id'], { unique: true });
     pgm.createIndex('game_answers', ['game_question_id', 'game_player_id'], { unique: true });
+    pgm.createIndex('questions', 'deck_id')
     pgm.createIndex('hosts', 'game_id');
     pgm.createIndex('user_decks', 'user_id');
 

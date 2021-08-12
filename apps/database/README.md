@@ -115,11 +115,6 @@ password | varchar(1000) | no | no
 roles | user_role[] | no | no |
 question_deck_credits | smallint | no | no | 0
 test_account | boolean | no | no | false
-notifications | boolean | no | no | false
-language | varchar(50) | no | no | "en-US"
-gender | varchar(50) | yes | no
-age_range | varchar(20) | no | no
-app_downloaded | boolean | no | no | false
 created_at | timestamp | no | no | now()
 updated_at | timestamp | no | no | now()
 
@@ -320,19 +315,6 @@ updated_at | timestamp | no | no | now()
 
 <br />
 
-### **user_deck_rating**
-
-| Column Name | Type | Can Be Null | Unique | Default | Reference | On Delete Reference
----| --- | --- | --- | --- | --- | ---
-id | integer | no | yes
-deck_id | integer | no | no | | decks | CASCADE
-user_id | integer | yes | no | | orders | SET NULL
-rating | user_rating | no | no
-created_at | timestamp | no | no | now()
-updated_at | timestamp | no | no | now()
-
-<br />
-
 ### **user_question_rating**
 
 | Column Name | Type | Can Be Null | Unique | Default | Reference | On Delete Reference
@@ -375,10 +357,10 @@ This function is run by update triggers on each table. It updates the updated_at
 
 ### number_true_answers
 
-- *parameters:* gameQuestionId
+- *parameters:* game_question_id
 - *returns:* integer
 
-Returns the number of "true" answers for a given gameQuestionId
+Returns the number of "true" answers for a given game_question_id
 
 ```sql
 SELECT number_true_answers(GAME_ID) # returns the calculated value as an integer
@@ -410,11 +392,12 @@ The following is a comprehensive list of the current database indexes:
 
 table | columns | unique
 |---|---|---
-| game_questions | gameId, questionSequenceIndex | yes
-| game_players | playerName, gameId | yes
-| game_answers | gameQuestionId, gamePlayerId | yes
-| user_decks | userId | no
-| hosts | gameId | no
+| game_questions | gameId, question_sequence_index | yes
+| game_players | player_name, game_id | yes
+| game_answers | game_question_id, game_player_id | yes
+| user_decks | user_id | no
+| hosts | game_id | no
+| questions | deck_id | no
 
 <br/>
 

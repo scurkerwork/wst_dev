@@ -29,7 +29,7 @@ const JoinGame: React.FC = () => {
             <Title1>Join a Game</Title1>
             <form onSubmit={formik.handleSubmit} className="flex flex-row gap-6">
                 <TextInput $border placeholder="Enter Game Code" {...formik.getFieldProps('accessCode')} />
-                <WrappedButton type="submit" color="blue" className="w-max" fontSize="label-big">Join Game</WrappedButton>
+                <WrappedButton type="submit" color="blue" className="w-max" fontSize="label-big">Join Game!</WrappedButton>
             </form>
             {formik.touched.accessCode && formik.errors.accessCode ? (<div className="text-red-light mt-2">{formik.errors.accessCode}</div>) : null}
         </section>

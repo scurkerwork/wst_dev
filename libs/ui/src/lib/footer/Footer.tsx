@@ -2,10 +2,9 @@ import tw from "tailwind-styled-components";
 
 export default tw.footer`
     bg-white-ish
-    filter
-    drop-shadow-light
-    w-screen
+    w-full
     flex
+    bottom-0
     flex-col
     gap-6
     py-8
@@ -14,6 +13,4 @@ export default tw.footer`
     sm:flex-row-reverse
     sm:justify-between
     px-8
-    absolute
-    bottom-0
 `

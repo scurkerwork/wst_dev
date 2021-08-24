@@ -1,29 +1,42 @@
-import React from "react";
 import Layout from "./Layout";
-import { Redirect, Route, Switch } from "react-router-dom";
-import { ROUTES } from "../util/constants";
-import { GuardedRoute } from "../features";
+import { Route, Switch, BrowserRouter } from "react-router-dom";
 
 // TODO: make a suspense fallback so these can be lazy loaded.
 import Home from "../pages/home/Home";
 import ContactUs from "../pages/contact-us/ContactUs";
-// import Login from "../pages/login/Login";
-// import Register from "../pages/register/Register";
+import CreateAccount from '../pages/create-account/CreateAccount';
+import ChooseName from "../features/choose-name/ChooseName";
+import Login from '../pages/login/Login';
+import DeckSelection from '../features/deck-selection/DeckSelection';
 
 const App: React.FC = () => {
   return (
-    <Layout>
-      <Switch>
-        <Route exact path="/" component={Home} />
-        <Route exact path={ROUTES.contactUs} component={ContactUs} />
-        {/* <GuardedRoute component={Home} exact={true} path={ROUTES.home} /> */}
-        {/* <Route exact path={ROUTES.login} component={Login} />
-        <Route exact path={ROUTES.register} component={Register} /> */}
-        {/* // <Route path="*">
-        //   <Redirect to={ROUTES.login} />
-        // </Route> */}
-      </Switch>
-    </Layout>
+
+    <BrowserRouter>
+      <Layout>
+        <Switch>
+          <Route exact path="/">
+            <Home />
+          </Route>
+          <Route exact path='/contact-us' >
+            <ContactUs />
+          </Route>
+          <Route exact path='/create-account' >
+            <CreateAccount />
+          </Route>
+          <Route path='/join'>
+            <ChooseName />
+          </Route>
+          <Route exact path='/login'>
+            <Login />
+          </Route>
+          <Route exact path='/decks'>
+            <DeckSelection />
+          </Route>
+        </Switch>
+      </Layout>
+    </BrowserRouter>
+
   );
 };
 

@@ -1,4 +1,3 @@
-import React from 'react';
 import {
     Form,
     LargeTitle,
@@ -7,32 +6,34 @@ import {
     TextArea,
     Button,
     SelectDropdown,
-    InputLabel
+    InputLabel,
+    WrappedButton,
+    Box
 } from "@whosaidtrue/ui";
 
-// TODO: make this do something
+// TODO: finish
 const ContactUs: React.FC = () => {
     const submitHandler = (e: React.FormEvent) => {
         e.preventDefault();
     }
     return (
-        <div className="w-max mx-auto">
+        <Box boxstyle='white' className="w-max mx-auto px-8 py-10">
             <Form onSubmit={submitHandler}>
                 {/* title */}
                 <FormGroup>
-                    <LargeTitle className="self-start">Contact Us</LargeTitle>
+                    <LargeTitle className="text-center mb-8">Contact Us</LargeTitle>
                 </FormGroup>
 
                 {/* name */}
-                <FormGroup>
+                <div className='w-11/12 flex-shrink-1 text-left'>
                     <InputLabel htmlFor="name">Name</InputLabel>
-                    <TextInput name="name" type="text" />
-                </FormGroup>
+                    <TextInput $border name="name" type="text" />
+                </div>
 
                 {/* email */}
                 <FormGroup>
                     <InputLabel htmlFor="email">Email</InputLabel>
-                    <TextInput name="email" type="email" />
+                    <TextInput $border name="email" type="email" />
                 </FormGroup>
 
                 {/* category */}
@@ -54,9 +55,9 @@ const ContactUs: React.FC = () => {
                 </FormGroup>
 
                 {/* submit */}
-                <Button type="submit" fontSize="label-big">Send</Button>
+                <WrappedButton color="blue" type="submit" fontSize="label-big" className="w-full">Send</WrappedButton>
             </Form>
-        </div>
+        </Box>
 
     )
 }

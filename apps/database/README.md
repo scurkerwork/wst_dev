@@ -1,64 +1,83 @@
 # DATABASE
+
 This directory contains the migrations and seeds, both for production and development environments.
 
-<br/>
+## Table of Contents
 
-Table of Contents
-=====
+----
+
 - [node-pg-migrate](#node-pg-migrate)
+
 - [Development and Production](#development-and-production)
+
 - [Running the Migrations](#running-the-migrations)
+
 - [Reversing the Migrations](#running-the-migrations)
+
 - [Migrations and the Environment](#migrations-and-the-environment)
+
+- [Creating New Migrations](#creating-new-migrations)
+
 - [Running Postgres and PG-Admin](#running-postgresql-and-pg-admin)
+
 - [Connecting to PG-Admin](#connecting-to-pg-admin)
+
 - [Tables](#tables)
+
 - [Custom Types](#custom-types)
+
 - [Functions](#functions)
+
 - [Triggers](#triggers)
+
 - [Indexes](#indexes)
+
 - [Extensions](#extenstions)
+
+- [Views](#views)
+
 - [Running a .sql file](#running-a-sql-file)
 
-<br />
-
 ## node-pg-migrate
+
 ----
 
 The migrations are generated and run by `node-pg-migrate`. This library provides a Typescript wrapper for database management commands, amd maintains a table that stores a history of the migrations that have been applied.
 
-Complete documentation for `node-pg-migrate` can be found at https://salsita.github.io/node-pg-migrate/
+Complete documentation for `node-pg-migrate` can be found [here](https://salsita.github.io/node-pg-migrate/)
 
-<br/>
+## Creating New Migrations
+
+ ----
+
+To create a new migration in the `migrations/development` directory, run
+`yarn migrate-dev:create YOUR_MIGRATION_NAME`.
 
 ## Development and Production
+
 ----
 Separate directories have been created to store development and production migrations. The purpose of this is to prevent unfinished migrations from mixing with production migrations. A migration file should only be copied into the production directory once it is finished and ready to be run. Ideally, once a migration is copied into the production directory, it should never be changed again, unless it is completely reversed and deleted.
 
-<br/>
-
 ## Running the migrations
+
 ----
 
 An npm script has been added to make it easy to run all migrations in development. To run the migrations locally, run `docker-compose up` to start the database containers. Once the database is up, run `yarn migrate-dev:up` to run all the migrations located in the `./migrations` directory.
 
-<br/>
-
 ## Reversing the migrations
+
 ----
 
-An npm script has been added to reveres all migrations. Run `yarn migrate-dev:down` to reverse all the migrations located in the `./migrations` directory.
-
-<br />
+An npm script has been added to reveres **the last** migration applied. Run `yarn migrate-dev:down` to reverse the most recent migration in the `./migrations` directory. Running the command again will delete the migration after that, progressing in reverse chronological order.
 
 ## Migrations and the environment
+
 ----
 The npm migration scripts use the `.local.env` file at the root of the monorepo to retrieve the DATABASE_URL variable. This is the connection string it uses to run the migrations.
 If the credentials in this string do not match the credentials in the database, the migrations will fail.
 
-<br />
-
 ## Running Postgresql and PG-Admin in development
+
 ----
 
 A docker-compose file is included at the root of the monorepo for running the database in development. To start the database, run `docker-compose up` from the root of the monorepo.
@@ -67,9 +86,8 @@ This will start a Postgresql container and bind it to port 5432 on the host. Mak
 
 The docker compose file will also start a pgadmin container, and bind it to port 8080 on the host.
 
-<br/>
-
 ## Connecting to PG-Admin
+
 ----
 Open your browser and navigate to `localhost:8080`.
 
@@ -97,15 +115,13 @@ Then, in the `Connection` tab, enter the information for the database you are wo
 
 Here you can see everything that is going on in the database.
 
-<br/>
-
 ## Tables
------
+
+----
 
 The following is a comprehensive list of the current list of tables in the Database:
 
 ### **users**
-
 
 | Column Name | Type | Can Be Null | Unique | Default | Reference | On Delete Reference
 ---| --- | --- | --- | --- | --- | ---
@@ -115,17 +131,8 @@ password | varchar(1000) | no | no
 roles | user_role[] | no | no |
 question_deck_credits | smallint | no | no | 0
 test_account | boolean | no | no | false
-created_at | timestamptz | no | no | now()
-updated_at | timestamptz | no | no | now()
-
-<br />
-
-### **game_hosts**
-| Column Name | Type | Can Be Null | Unique | Default | Reference | On Delete Reference
----| --- | --- | --- | --- | --- | ---
-id | integer | no | yes
-game_id | no | no | | | games | CASCADE
-player_id | no | no | || game_players | CASCADE
+notifiactions | boolean | no | no | false
+password_reset_code | varchar(4) | yes | no
 created_at | timestamptz | no | no | now()
 updated_at | timestamptz | no | no | now()
 
@@ -139,7 +146,7 @@ sort_order | smallint | no | no
 clean | boolean | no | no
 age_rating | smallint | no | no
 movie_rating | varchar(50) | no | no
-SFW | boolean | no | no
+sfw | boolean | no | no
 status | deck_status | no | no
 description | text | no | no
 purchase_price | money | no | no
@@ -148,8 +155,6 @@ thumbnail_url | varchar(1000) | no | no
 created_at | timestamptz | no | no | now()
 updated_at | timestamptz | no | no | now()
 
-<br />
-
 ### **games**
 
 | Column Name | Type | Can Be Null | Unique | Default | Reference | On Delete Reference
@@ -157,12 +162,11 @@ updated_at | timestamptz | no | no | now()
 id | integer | no | yes
 access_code | varchar(200) | yes | yes
 status | varchar(100) | no | no
+deck_id | integer | no | no | | decks | SET NULL
 start_date | timestamptz | yes | no
 end_date | timestamptz | yes | no
 created_at | timestamptz | no | no | now()
 updated_at | timestamptz | no | no | now()
-
-<br />
 
 ### **questions**
 
@@ -178,19 +182,15 @@ status | question_status | no | no
 created_at | timestamptz | no | no | now()
 updated_at | timestamptz | no | no | now()
 
-<br />
-
 ### **game_players**
 
 | Column Name | Type | Can Be Null | Unique | Default | Reference | On Delete Reference
 ---| --- | --- | --- | --- | --- | ---
 id | integer | no | yes
-player_name | varchar(200) | no | no
+player_name | citext | no | no
 game_id | integer | no | no | | games | CASCADE
 created_at | timestamptz | no | no | now()
 updated_at | timestamptz | no | no | now()
-
-<br />
 
 ### **game_users**
 
@@ -201,8 +201,6 @@ user_id | integer | no | no | | users | CASCADE
 game_id | integer | no | no | | games | CASCADE
 created_at | timestamptz | no | no | now()
 updated_at | timestamptz | no | no | now()
-
-<br />
 
 ### **game_questions**
 
@@ -216,7 +214,15 @@ game_id | integer | no | no | | games | CASCADE
 created_at | timestamptz | no | no | now()
 updated_at | timestamptz | no | no | now()
 
-<br />
+### **game_hosts**
+
+| Column Name | Type | Can Be Null | Unique | Default | Reference | On Delete Reference
+---| --- | --- | --- | --- | --- | ---
+id | integer | no | yes
+game_id | integer | no | yes | | games | CASCADE
+player_id | integer | no | no || game_players | CASCADE
+created_at | timestamptz | no | no | now()
+updated_at | timestamptz | no | no | now()
 
 ### **generated_names**
 
@@ -226,10 +232,9 @@ id | integer | no | yes
 name | varchar(200) | no | yes
 clean | boolean | no | no
 times_displayed | integer | no | no | 0
+times_chosen | integer | no | no | 0
 created_at | timestamptz | no | no | now()
 updated_at | timestamptz | no | no | now()
-
-<br />
 
 ### **game_answers**
 
@@ -239,13 +244,12 @@ id | integer | no | yes
 game_question_id | integer | no | no | | game_questions | CASCADE
 game_id | integer | no | no | | games | CASCADE
 game_player_id | integer | no | no | | game_players | CASCADE
+question_id | integer | yes | no | | questions | SET NULL
 value | answer | no | no
 number_true_guess | smallint | yes | no
 score | smallint | yes | no
 created_at | timestamptz | no | no | now()
 updated_at | timestamptz | no | no | now()
-
-<br />
 
 ### **user_decks**
 
@@ -257,8 +261,6 @@ deck_id | integer | no | no | | decks | CASCADE
 created_at | timestamptz | no | no | now()
 updated_at | timestamptz | no | no | now()
 
-<br />
-
 ### **user_sessions**
 
 | Column Name | Type | Can Be Null | Unique | Default | Reference | On Delete Reference
@@ -268,8 +270,6 @@ user_id | integer | yes | no | | users | SET NULL
 ip_address | cidr | no | no
 created_at | timestamptz | no | no | now()
 updated_at | timestamptz | no | no | now()
-
-<br />
 
 ### **orders**
 
@@ -283,9 +283,7 @@ fulfilled_on | timestamptz | yes | no
 created_at | timestamptz | no | no | now()
 updated_at | timestamptz | no | no | now()
 
-<br />
-
-### **user_question_rating**
+### **user_question_ratings**
 
 | Column Name | Type | Can Be Null | Unique | Default | Reference | On Delete Reference
 ---| --- | --- | --- | --- | --- | ---
@@ -296,9 +294,8 @@ rating | user_rating | no | no
 created_at | timestamptz | no | no | now()
 updated_at | timestamptz | no | no | now()
 
-<br />
-
 ## Custom Types
+
 ----
 Some custom types have been created to improve database performance. Column sthat have one of the types listed here can only have the values in the enum. Attempting to set the value so something not defined in the enum will result in an error. The following is a comprehensive list of currently defined custom ENUM types:
 
@@ -310,18 +307,16 @@ user_role | "admin", "user"
 answer_value | "true", "false", "pass"
 user_rating | "great", "bad"
 
-<bt/>
-
 ## Functions
+
 ----
 Some convenience functions have been added to use as triggers, and to make the database easier to use in general. The following is a comprehensive list of the functions currently defined in the database
 
-<br />
-
 ### update_updated_at_column
 
- - *parameters:* none
- - *returns:* row value
+- *parameters:* none
+
+- *returns:* row value
 
 This function is run by update triggers on each table. It updates the updated_at column after any updates have been perfermed if and only if the update query successfully modified the row. If an update query is sent, but no values change, then the function doesn't do anything.
 
@@ -330,27 +325,71 @@ This function is run by update triggers on each table. It updates the updated_at
 - *parameters:* game_question_id
 - *returns:* integer
 
-Returns the number of "true" answers for a given game_question_id
+Returns the number of "true" answers for a given game_question_id.
 
 ```sql
 SELECT number_true_answers(GAME_ID) # returns the calculated value as an integer
 ```
 
-<bt/>
+### user_owned_decks
+
+- *parameters:* user_id
+- *returns:* List of Decks.
+
+Returns all decks that the specified user owns.
+
+```sql
+SELECT * FROM user_owned_decks(USER_ID)
+```
+
+### user_not_owned_decks
+
+- *parameters:* user_id
+- *returns:* List of Decks.
+
+Returns all decks that the specified user does NOT own.
+
+```sql
+SELECT * FROM user_owned_decks(USER_ID)
+```
+
+### get_game_host
+
+- *parameters:* game_id
+- *returns:* id, player_name
+
+Get player info for game host.
+
+```sql
+SELECT * FROM get_game_host(GAME_ID)
+```
+
+### delete_host_for_game
+
+Deletes any existing game_host rows with the same game_id as the row being inserted.
+Cannot be called directly. Only returns a trigger function.
 
 ## Triggers
+
 ----
 
 ### **update_updated_at_trigger**
+
 - *function:* update_updated_at_column
 
 Sets the updated_at column of modified rows to the current time if and only if the row was modified.
 
 Every table has a copy of this trigger. It runs after every update operation.
 
-<br/>
+### **delete_host**
+
+- *function:* delete_host_for_game
+
+When a new host is added to the game_hosts table, any existing hosts with the same game_id are deleted.
+This ensures a game only ever has 1 host.
 
 ## Indexes
+
 ----
 Indexes are used to improve performance of common queries, and to impose unique constraints on column sets.
 
@@ -362,24 +401,39 @@ The following is a comprehensive list of the current database indexes:
 
 table | columns | unique
 |---|---|---
-| game_questions | gameId, question_sequence_index | yes
-| game_players | player_name, game_id | yes
-| game_answers | game_question_id, game_player_id | yes
-| user_decks | user_id | no
-| hosts | game_id | no
+| game_questions | game_id, question_sequence_index | yes
+| game_players | game_id, player_name | yes
+| game_answers | question_id | no
 | questions | deck_id | no
-
-<br/>
+| user_decks | user_id | no
 
 ## Extensions
+
 ----
 
 Enabled extensions:
-- pg_stat_statements (https://www.postgresql.org/docs/current/pgstatstatements.html)
 
-<br />
+- pg_stat_statements [(documentation)](https://www.postgresql.org/docs/current/pgstatstatements.html)
+
+- pgcrypto: used to encrypt and verify passwords
+
+- citext: allows case insensitive text searching and indexing.
+
+## Views
+
+----
+
+### active_decks
+
+Returns all decks that have the value `active` in the `status` column. Returns all columns.
+
+### active_questions
+
+Returns all decks that have the value `active` in the `status` column. Returns all columns.
+
 
 ## Running a SQL file
+
 ----
 
 The `./dev` directory is mounted into the Postgres container at the container path `/usr/local/dev`. This makes it easy to run

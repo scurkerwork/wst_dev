@@ -6,6 +6,16 @@ export async function up(pgm: MigrationBuilder): Promise<void> {
 
     /**
     * ======================================
+    * EXTENSIONS
+    * ======================================
+    */
+    pgm.createExtension('pg_stat_statements');
+    pgm.createExtension('pgcrypto');
+    pgm.createExtension('citext');
+
+
+    /**
+    * ======================================
     * TYPES
     * ======================================
     */
@@ -29,6 +39,8 @@ export async function up(pgm: MigrationBuilder): Promise<void> {
         roles: { type: 'user_role[]', notNull: true }, // custom type
         question_deck_credits: { type: 'smallint', notNull: true, default: 0 },
         test_account: { type: 'boolean', notNull: true, default: false },
+        notifications: { type: 'boolean', notNull: true, default: false },
+        password_reset_code: { type: 'string', notNull: false },
         created_at: {
             type: 'timestamptz',
             notNull: true,
@@ -50,9 +62,10 @@ export async function up(pgm: MigrationBuilder): Promise<void> {
         clean: { type: 'boolean', notNull: true },
         age_rating: { type: 'smallint', notNull: true },
         movie_rating: { type: 'varchar(50)', notNull: true },
-        SFW: { type: 'boolean', notNull: true },
+        sfw: { type: 'boolean', notNull: true },
         status: { type: 'deck_status', notNull: true }, // custom type
-        description: { type: 'text', notNull: true }, purchasePrice: { type: 'money', notNull: true },
+        description: { type: 'text', notNull: true },
+        purchase_price: { type: 'money', notNull: true },
         example_question: { type: 'text', notNull: false },
         thumbnail_url: { type: 'varchar(1000)', notNull: false },
         created_at: {
@@ -72,6 +85,7 @@ export async function up(pgm: MigrationBuilder): Promise<void> {
         id: 'id',
         access_code: { type: 'varchar(200)', notNull: false, unique: true },
         status: { type: 'varchar(100)', notNull: true }, // TODO: create custom type? what are the possible values?
+        deck_id: { type: 'integer', notNull: false, references: 'decks', onDelete: 'SET NULL' },
         start_date: { type: 'timestamptz', notNull: false },
         end_date: { type: 'timestamptz', notNull: false },
         created_at: {
@@ -107,9 +121,7 @@ export async function up(pgm: MigrationBuilder): Promise<void> {
         }
     })
 
-
-
-    // gamePlayers
+    // game_players
     pgm.createTable('game_players', {
         id: 'id',
         game_id: {
@@ -118,34 +130,7 @@ export async function up(pgm: MigrationBuilder): Promise<void> {
             notNull: true,
             onDelete: 'CASCADE'
         },
-        player_name: { type: 'varchar(200)', notNull: true },
-        created_at: {
-            type: 'timestamptz',
-            notNull: true,
-            default: pgm.func('now()'),
-        },
-        updated_at: {
-            type: 'timestamptz',
-            notNull: true,
-            default: pgm.func('now()'),
-        }
-    })
-
-    // hosts
-    pgm.createTable('game_hosts', {
-        id: 'id',
-        game_id: {
-            type: 'integer',
-            references: 'games',
-            notNull: true,
-            onDelete: 'CASCADE'
-        },
-        game_player_id: {
-            type: 'integer',
-            references: 'game_players',
-            notNull: true,
-            onDelete: 'CASCADE'
-        },
+        player_name: { type: 'citext', notNull: true },
         created_at: {
             type: 'timestamptz',
             notNull: true,
@@ -159,15 +144,14 @@ export async function up(pgm: MigrationBuilder): Promise<void> {
     })
 
     // user_question_rating
-    pgm.createTable('user_question_rating', {
+    pgm.createTable('user_question_ratings', {
         id: 'id',
         question_id: { type: 'integer', notNull: true, references: 'questions', onDelete: 'CASCADE' },
         user_id: { type: 'integer', notNull: false, references: 'users', onDelete: 'SET NULL' },
         rating: { type: 'user_rating', notNull: true }
     })
 
-
-    // gameUsers
+    // game_users
     pgm.createTable('game_users', {
         id: 'id',
         game_id: {
@@ -194,7 +178,7 @@ export async function up(pgm: MigrationBuilder): Promise<void> {
         }
     })
 
-    // gameQuestions
+    // game_questions
     pgm.createTable('game_questions', {
         id: 'id',
         question_id: {
@@ -234,6 +218,7 @@ export async function up(pgm: MigrationBuilder): Promise<void> {
         name: { type: 'varchar(200)', notNull: true },
         clean: { type: 'boolean', notNull: true },
         times_displayed: { type: 'integer', notNull: true, default: 0 },
+        times_chosen: { type: 'integer', notNull: true, default: 0 },
         created_at: {
             type: 'timestamptz',
             notNull: true,
@@ -246,7 +231,7 @@ export async function up(pgm: MigrationBuilder): Promise<void> {
         }
     })
 
-    // gameAnswers
+    // game_answers
     pgm.createTable('game_answers', {
         id: 'id',
         game_question_id: {
@@ -270,6 +255,7 @@ export async function up(pgm: MigrationBuilder): Promise<void> {
         value: { type: 'answer_value', notNull: true }, // custom type
         number_true_guess: { type: 'smallint', notNull: true },
         score: { type: 'smallint', notNull: false },
+        question_id: { type: 'integer', notNull: false, references: 'questions', onDelete: 'SET NULL' },
         created_at: {
             type: 'timestamptz',
             notNull: true,
@@ -282,12 +268,11 @@ export async function up(pgm: MigrationBuilder): Promise<void> {
         }
     })
 
-    // userDecks
+    // user_decks
     pgm.createTable('user_decks', {
         id: 'id',
         user_id: {
-            type:
-                'integer',
+            type: 'integer',
             notNull: true,
             references: 'users',
             onDelete: 'CASCADE'
@@ -310,7 +295,7 @@ export async function up(pgm: MigrationBuilder): Promise<void> {
         }
     })
 
-    // userSessions
+    // user_sessions
     pgm.createTable('user_sessions', {
         id: 'id',
         user_id: {
@@ -352,6 +337,34 @@ export async function up(pgm: MigrationBuilder): Promise<void> {
         }
     });
 
+    // game_hosts
+    pgm.createTable('game_hosts', {
+        id: 'id',
+        game_id: {
+            type: 'integer',
+            unique: true,
+            references: 'games',
+            notNull: true,
+            onDelete: 'CASCADE'
+        },
+        game_player_id: {
+            type: 'integer',
+            references: 'game_players',
+            notNull: true,
+            onDelete: 'CASCADE'
+        },
+        created_at: {
+            type: 'timestamptz',
+            notNull: true,
+            default: pgm.func('now()'),
+        },
+        updated_at: {
+            type: 'timestamptz',
+            notNull: true,
+            default: pgm.func('now()'),
+        }
+    })
+
     /**
     * ======================================
     * FUNCTIONS
@@ -369,11 +382,6 @@ export async function up(pgm: MigrationBuilder): Promise<void> {
         END IF;
     END;`)
 
-    // get number of users that answered 'true' on a given game_question.id
-    pgm.createFunction('number_true_answers', [{ mode: 'IN', type: 'integer', name: 'gqId' }], { returns: 'smallint', onNull: true, language: 'plpgsql' }, `
-    BEGIN
-	    RETURN(SELECT Count(*) FROM "game_answers" AS answers WHERE answers."game_question_id" = "gqId" AND answers."value" = 'true');
-    END`)
 
     /**
     * ======================================
@@ -471,10 +479,11 @@ export async function up(pgm: MigrationBuilder): Promise<void> {
         when: 'BEFORE',
         operation: 'UPDATE',
         level: 'ROW',
-        function: 'update_updated_at_column'
+        function: 'update_updated_at_column',
     })
-    /* other triggers */
-
+    /**
+     * Other triggers
+     */
 
     /**
     * ======================================
@@ -482,18 +491,12 @@ export async function up(pgm: MigrationBuilder): Promise<void> {
     * ======================================
     */
     pgm.createIndex('game_questions', ['game_id', 'question_sequence_index'], { unique: true });
-    pgm.createIndex('game_players', ['player_name', 'game_id'], { unique: true });
-    pgm.createIndex('game_answers', ['game_question_id', 'game_player_id'], { unique: true });
-    pgm.createIndex('questions', 'deck_id')
-    pgm.createIndex('game_hosts', 'game_id');
+    pgm.createIndex('game_players', ['game_id', 'player_name'], { unique: true });
+    pgm.createIndex('game_answers', 'question_id');
+    pgm.createIndex('questions', 'deck_id');
     pgm.createIndex('user_decks', 'user_id');
 
-    /**
-    * ======================================
-    * EXTENSIONS
-    * ======================================
-    */
-    pgm.createExtension('pg_stat_statements');
+
 }
 
 // export async function down(pgm: MigrationBuilder): Promise<void> {

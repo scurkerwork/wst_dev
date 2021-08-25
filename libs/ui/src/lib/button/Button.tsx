@@ -3,7 +3,7 @@ import tw from 'tailwind-styled-components';
 
 export type ButtonStyle = 'default' | 'big-text' | 'small' | 'inline'
 
-export interface ButtonProps {
+export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
     buttonStyle?: ButtonStyle;
     $secondary?: boolean
 }

@@ -44,20 +44,9 @@ module.exports = {
             },
             dropShadow: {
                 'subtle-stroke': '0 0 0.45rem #D7D8F3',
-                'blue-base-b': '0 2px 0 #0F69FF',
-                'blue-t': 'inset 0 2px 0 #084AB8',
-                'blue-b': '0 2px 0 #084AB8',
-                'blue-y': '',
-                'yellow-t': 'inset 0 2px 0 #C17C10',
-                'yellow-b': '0 2px 0 #C17C10',
-                'yellow-y': '',
                 'light': '0 0 0.6rem #EBEBF9',
                 'mid': '0 0 0.6rem #ACADEB',
                 'card': '0 0 32px #893FE2'
-            },
-            boxSadow: {
-                'yellow': '0px 2px 0px #C17C10',
-                'blue': '0px 2px 0px #084AB8'
             },
             ringColor: {
                 'primary': '#5D5FEF'
@@ -66,6 +55,10 @@ module.exports = {
         fontFamily: {
             'sans': ['Nunito'],
             'roboto': ['Roboto']
+        },
+        boxShadow: {
+            'yellow': '0px 2px 0px #C17C10',
+            'blue': '0px 2px 0px #084AB8'
         },
     },
     variants: {

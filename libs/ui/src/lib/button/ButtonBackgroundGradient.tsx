@@ -2,7 +2,6 @@ import tw from "tailwind-styled-components";
 
 export interface BgProps {
     btncolor: 'blue' | 'yellow';
-    $pill?: boolean;
 }
 
 // A div used to wrap around buttons that have a border effect. Defaults to blue.

@@ -14,22 +14,24 @@ export default {
             },
             table: {
                 type: { required: false, summary: "Button Style", detail: `"default" | "big-text" | "small" | "iniline"` },
-                defaultValue: { summary: "default" },
+                defaultValue: { summary: "default", details: 'default' },
             },
             options: ["default", "big-text", "small", "iniline"]
         },
 
+        $secondary: {
+            name: '$secondary',
+            description: "Each style has a primary and secondary variant. Add this prop to switch to the secondary",
+            type: 'boolean',
+            default: false,
+            table: {
+                type: { summary: 'boolean' },
+                defaultValue: { summary: 'false' }
+            },
+        }
+
     },
-    $secondary: {
-        name: '$secondary',
-        description: "Each style has a primary and secondary variant. Add this prop to switch to the secondary",
-        type: 'boolean',
-        default: false,
-        table: {
-            type: { summary: 'boolean' },
-            defaultValue: { summary: 'false' }
-        },
-    }
+
 } as Meta;
 
-export const Buttons: Story<ButtonProps> = (args) => <Button {...args} >Button</Button>
+export const Buttons: Story<ButtonProps> = (args) => <Button {...args} >Button Label</Button>

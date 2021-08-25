@@ -55,7 +55,7 @@ const ChooseName: React.FC = () => {
 
     const namesHelper = (names: NameObject[]) => {
         return names.map((nameObj, i) => {
-            return <Button key={i} buttonStyle="big-text" onClick={chooseName(nameObj)} className="place-self-stretch" type="button">{nameObj.name}</Button>
+            return <Button key={i} buttonStyle="big-text" className="self-stretch w-full" onClick={chooseName(nameObj)} type="button">{nameObj.name}</Button>
         })
     }
 
@@ -70,9 +70,9 @@ const ChooseName: React.FC = () => {
     return (
         <Box boxstyle='white' className="w-max mx-auto px-8 py-10">
             <Title1 className="text-basic-black mx-12">Choose Your Player Name</Title1>
-            <div className="flex flex-col gap-3 w-96 mt-10 flex-shrink">
+            <div className="flex flex-col gap-3 w-96 mt-10 flex-grow items-center">
                 {namesHelper(names)}
-                <div className="flex items-center justify-center mt-4">
+                <div className="flex mt-4">
                     <RerollNamesButton onClick={rerollHandler} rerolls={rerolls} />
                 </div>
             </div>

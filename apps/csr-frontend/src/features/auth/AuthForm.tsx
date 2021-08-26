@@ -18,12 +18,13 @@ import { selectAuthError, setErrorThunk, clearError } from './authSlice';
 
 export interface AuthFormProps {
     endpoint: string;
+    title: string;
     buttonlabel: string;
     $showMinLength?: boolean;
     onSuccess: () => void;
 }
 
-const AuthForm: React.FC<AuthFormProps> = ({ endpoint, onSuccess, buttonlabel, $showMinLength }) => {
+const AuthForm: React.FC<AuthFormProps> = ({ endpoint, onSuccess, buttonlabel, $showMinLength, title }) => {
     const dispatch = useAppDispatch();
 
     // TODO: need to clarify how this error is reported. Maybe move this to flash message modal?
@@ -69,7 +70,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ endpoint, onSuccess, buttonlabel, $
         <Form onSubmit={formik.handleSubmit}>
             {/* title */}
             <FormGroup>
-                <LargeTitle className="text-center mb-8">Create Account</LargeTitle>
+                <LargeTitle className="text-center mb-8">{title}</LargeTitle>
 
                 {/* This error reporting stuff is placeholder*/}
                 {authError ? <Headline className="text-red-light">An account already exists with that email.</Headline> : null}

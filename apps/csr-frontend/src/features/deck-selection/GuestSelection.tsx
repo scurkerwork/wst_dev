@@ -24,7 +24,7 @@ const GuestSelection: React.FC = () => {
             <DeckSet>
                 {topSet}
             </DeckSet>
-            <div className="w-full flex flex-row place-items-center gap-4 text-white-ish h-8">
+            <div className="lg:w-full w-2/3 flex flex-row place-items-center gap-4 text-white-ish h-8">
                 <Divider dividerColor='white' className={dividerClass} />
                 <Headline className="w-max flex-shrink-0">Can't find your decks? <Link className="cursor-pointer underline" to="/login">Log In</Link></Headline>
                 <Divider dividerColor='white' className={dividerClass} />

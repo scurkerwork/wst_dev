@@ -19,6 +19,6 @@ export interface DividerProps extends React.HtmlHTMLAttributes<React.ReactSVGEle
 }
 
 const Divider: React.FC<DividerProps> = ({ dividerColor }) => {
-    return dividerColor === 'white' ? <WhiteDivider /> : <GreyDivider />
+    return dividerColor === 'white' ? <WhiteDivider width="16rem" height="16rem" /> : <GreyDivider width="4rem" height="4rem" />
 }
 export default Divider;

@@ -11,7 +11,8 @@ import {
     TextInput,
     InputLabel,
     Button,
-    Headline
+    Headline,
+    ErrorText
 } from "@whosaidtrue/ui";
 import { api } from '../../api';
 import { selectAuthError, setErrorThunk, clearError } from './authSlice';
@@ -64,7 +65,8 @@ const AuthForm: React.FC<AuthFormProps> = ({ endpoint, onSuccess, buttonlabel, $
             }
         },
     });
-
+    const emailErr = formik.touched.email && formik.errors.email ? true : false;
+    const pwErr = formik.touched.password && formik.errors.password ? true : false;
     // render
     return (
         <Form onSubmit={formik.handleSubmit}>
@@ -73,22 +75,22 @@ const AuthForm: React.FC<AuthFormProps> = ({ endpoint, onSuccess, buttonlabel, $
                 <LargeTitle className="text-center mb-8">{title}</LargeTitle>
 
                 {/* This error reporting stuff is placeholder*/}
-                {authError ? <Headline className="text-red-light">An account already exists with that email.</Headline> : null}
+                {authError ? <ErrorText>An account already exists with that email.</ErrorText> : null}
             </FormGroup>
 
             {/* email */}
             <FormGroup>
                 <InputLabel htmlFor="email">Email</InputLabel>
-                <TextInput {...formik.getFieldProps('email')} id="email" $border name="email" type="email" />
-                {formik.touched.email && formik.errors.email ? (<div className="text-red-light mt-2">{formik.errors.email}</div>) : null}
+                <TextInput {...formik.getFieldProps('email')} error={emailErr} id="email" $border name="email" type="email" />
+                {emailErr ? (<ErrorText>{formik.errors.email}</ErrorText>) : null}
             </FormGroup>
 
             {/* password */}
             <FormGroup>
                 <InputLabel htmlFor="password">Password</InputLabel>
-                <TextInput {...formik.getFieldProps('password')} id="password" $border name="password" type="password" />
+                <TextInput {...formik.getFieldProps('password')} id="password" error={pwErr} $border name="password" type="password" />
                 {$showMinLength && <Headline className="text-basic-gray my-3">8 character minimum length</Headline>}
-                {formik.touched.password && formik.errors.password ? (<div className="text-red-light mt-2">{formik.errors.password}</div>) : null}
+                {pwErr ? (<ErrorText>{formik.errors.password}</ErrorText>) : null}
             </FormGroup>
 
             {/* submit */}

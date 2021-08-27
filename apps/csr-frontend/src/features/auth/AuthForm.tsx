@@ -79,13 +79,13 @@ const AuthForm: React.FC<AuthFormProps> = ({ endpoint, onSuccess, buttonlabel, $
     const pwErr = formik.touched.password && formik.errors.password ? true : undefined;
     // render
     return (
-        <Form onSubmit={formik.handleSubmit}>
+        <form className="flex flex-col gap-3" onSubmit={formik.handleSubmit}>
             {/* title */}
             <FormGroup>
-                <LargeTitle className="text-center mb-8">{title}</LargeTitle>
+                <LargeTitle className="text-center mb-3">{title}</LargeTitle>
 
                 {/* This error reporting stuff is placeholder*/}
-                {authError && <ErrorText>{authError}</ErrorText>}
+                {authError && <ErrorText className="text-center">{authError}</ErrorText>}
             </FormGroup>
 
             {/* email */}
@@ -99,13 +99,13 @@ const AuthForm: React.FC<AuthFormProps> = ({ endpoint, onSuccess, buttonlabel, $
             <FormGroup>
                 <InputLabel htmlFor="password">Password</InputLabel>
                 <TextInput {...formik.getFieldProps('password')} id="password" error={pwErr} $border name="password" type="password" />
-                {$showMinLength && <Headline className="text-basic-gray my-3">8 character minimum length</Headline>}
+                {$showMinLength && <Headline className="text-basic-gray">8 character minimum length</Headline>}
                 {pwErr && <ErrorText>{formik.errors.password}</ErrorText>}
             </FormGroup>
 
             {/* submit */}
-            <Button color="blue" type="submit" className="w-full">{buttonlabel}</Button>
-        </Form>
+            <Button color="blue" type="submit" >{buttonlabel}</Button>
+        </form>
     )
 }
 

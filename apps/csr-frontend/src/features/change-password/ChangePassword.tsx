@@ -50,11 +50,13 @@ const ChangePassword: React.FC = () => {
     const confPwErr = formik.touched.confPass && formik.errors.confPass ? true : undefined
 
     return (
-        <div className="text-center px-8 py-12 w-full rounded-3xl bg-white-ish border-0">
-            <form className="flex flex-col gap-8" onSubmit={formik.handleSubmit}>
+        <div className="text-center px-8 py-11 w-change-password rounded-3xl bg-white-ish border-0">
+            <form className="w-full flex flex-col gap-4" onSubmit={formik.handleSubmit}>
                 {/* title */}
-                <Title2 className="">Change Password</Title2>
-                {changeErr && <ErrorText>{changeErr}</ErrorText>}
+                <FormGroup>
+                    <Title2 className="text-center">Change Password</Title2>
+                    {changeErr && <ErrorText>{changeErr}</ErrorText>}
+                </FormGroup>
 
                 {/* oldPass */}
                 <FormGroup>
@@ -76,7 +78,7 @@ const ChangePassword: React.FC = () => {
                     <TextInput {...formik.getFieldProps('confPass')} id="confirm-password" error={confPwErr} $border name="confirm-password" type="password" />
                     {confPwErr ? (<ErrorText>{formik.errors.confPass}</ErrorText>) : null}
                 </FormGroup>
-                <div className="px-20">
+                <div className="px-32 mt-4">
                     <Button type="submit" >Change Password</Button>
                 </div>
             </form>

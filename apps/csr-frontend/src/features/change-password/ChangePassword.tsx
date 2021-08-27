@@ -4,14 +4,11 @@ import * as Yup from 'yup';
 import { passwordValidationObject } from '@whosaidtrue/util';
 import { api } from '../../api';
 import {
-    Box,
-    Form,
     TextInput,
     FormGroup,
     Button,
     InputLabel,
     ErrorText,
-    LargeTitle,
     Headline,
     Title2
 } from '@whosaidtrue/ui';
@@ -60,22 +57,22 @@ const ChangePassword: React.FC = () => {
 
                 {/* oldPass */}
                 <FormGroup>
-                    <InputLabel htmlFor="old-password">Old Password</InputLabel>
-                    <TextInput {...formik.getFieldProps('oldPass')} id="old-password" error={oldPwErr} $border name="old-password" type="password" />
+                    <InputLabel htmlFor="oldPass">Old Password</InputLabel>
+                    <TextInput {...formik.getFieldProps('oldPass')} id="oldPass" error={oldPwErr} $border name="oldPass" type="password" />
                     {oldPwErr ? (<ErrorText>{formik.errors.oldPass}</ErrorText>) : null}
                 </FormGroup>
 
                 {/* newPass */}
                 <FormGroup>
-                    <InputLabel htmlFor="new-password">New Password</InputLabel>
-                    <TextInput {...formik.getFieldProps('newPass')} id="new-password" error={newPwErr} $border name="new-password" type="password" />
+                    <InputLabel htmlFor="newPass">New Password</InputLabel>
+                    <TextInput {...formik.getFieldProps('newPass')} id="newPass" error={newPwErr} $border name="newPass" type="password" />
                     {newPwErr ? (<ErrorText>{formik.errors.newPass}</ErrorText>) : null}
                 </FormGroup>
 
                 {/* confPass */}
                 <FormGroup>
-                    <InputLabel htmlFor="confirm-password">Confirm New Password</InputLabel>
-                    <TextInput {...formik.getFieldProps('confPass')} id="confirm-password" error={confPwErr} $border name="confirm-password" type="password" />
+                    <InputLabel htmlFor="confPass">Confirm New Password</InputLabel>
+                    <TextInput {...formik.getFieldProps('confPass')} id="confPass" error={confPwErr} $border name="confPass" type="password" />
                     {confPwErr ? (<ErrorText>{formik.errors.confPass}</ErrorText>) : null}
                 </FormGroup>
                 <div className="px-32 mt-4">

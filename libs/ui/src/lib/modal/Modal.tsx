@@ -7,8 +7,7 @@ const modalStyles = {
         top: '50%',
         left: '50%',
         transform: 'translate(-50%, -50%)',
-        height: 'min-content',
-        width: 'min-content',
+        height: 'max-content',
         padding: 0,
         borderRadius: '1.5rem'
     }

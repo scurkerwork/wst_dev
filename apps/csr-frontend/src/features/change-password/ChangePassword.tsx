@@ -1,0 +1,87 @@
+import { useState } from 'react';
+import { useFormik } from 'formik';
+import * as Yup from 'yup';
+import { passwordValidationObject } from '@whosaidtrue/util';
+import { api } from '../../api';
+import {
+    Box,
+    Form,
+    TextInput,
+    FormGroup,
+    Button,
+    InputLabel,
+    ErrorText,
+    LargeTitle,
+    Headline,
+    Title2
+} from '@whosaidtrue/ui';
+import { useAppDispatch } from '../../app/hooks';
+import { closeModals } from '../modal/modalSlice';
+
+
+const ChangePassword: React.FC = () => {
+    const dispatch = useAppDispatch();
+    const [changeErr, setChangeErr] = useState('')
+
+    const formik = useFormik({
+        initialValues: {
+            oldPass: '',
+            newPass: '',
+            confPass: ''
+        },
+        validationSchema: Yup.object({
+            oldPass: Yup.string().required('You must enter your old password'),
+            newPass: passwordValidationObject,
+            confPass: Yup.string().oneOf([Yup.ref('newPass'), null], 'Passwords do not match').required('Must confirm new password')
+        }),
+        onSubmit: async (values) => {
+            const { oldPass, newPass } = values
+            try {
+                await api.patch('/user/change-pass', { oldPass, newPass })
+                dispatch(closeModals())
+            } catch (e) {
+                setChangeErr(e.response.data)
+            }
+        }
+    })
+
+    const oldPwErr = formik.touched.oldPass && formik.errors.oldPass ? true : undefined
+    const newPwErr = formik.touched.newPass && formik.errors.newPass ? true : undefined
+    const confPwErr = formik.touched.confPass && formik.errors.confPass ? true : undefined
+
+    return (
+        <div className="text-center px-8 py-12 w-full rounded-3xl bg-white-ish border-0">
+            <form className="flex flex-col gap-8" onSubmit={formik.handleSubmit}>
+                {/* title */}
+                <Title2 className="">Change Password</Title2>
+                {changeErr && <ErrorText>{changeErr}</ErrorText>}
+
+                {/* oldPass */}
+                <FormGroup>
+                    <InputLabel htmlFor="old-password">Old Password</InputLabel>
+                    <TextInput {...formik.getFieldProps('oldPass')} id="old-password" error={oldPwErr} $border name="old-password" type="password" />
+                    {oldPwErr ? (<ErrorText>{formik.errors.oldPass}</ErrorText>) : null}
+                </FormGroup>
+
+                {/* newPass */}
+                <FormGroup>
+                    <InputLabel htmlFor="new-password">New Password</InputLabel>
+                    <TextInput {...formik.getFieldProps('newPass')} id="new-password" error={newPwErr} $border name="new-password" type="password" />
+                    {newPwErr ? (<ErrorText>{formik.errors.newPass}</ErrorText>) : null}
+                </FormGroup>
+
+                {/* confPass */}
+                <FormGroup>
+                    <InputLabel htmlFor="confirm-password">Confirm New Password</InputLabel>
+                    <TextInput {...formik.getFieldProps('confPass')} id="confirm-password" error={confPwErr} $border name="confirm-password" type="password" />
+                    {confPwErr ? (<ErrorText>{formik.errors.confPass}</ErrorText>) : null}
+                </FormGroup>
+                <div className="px-20">
+                    <Button type="submit" >Change Password</Button>
+                </div>
+            </form>
+            <Headline className="text-basic-gray underline cursor-pointer mt-10">Forgot Password?</Headline>
+        </div>
+    )
+}
+export default ChangePassword;

@@ -3,7 +3,7 @@ import * as Yup from 'yup';
 import { useAppDispatch, useAppSelector } from '../../app/hooks';
 import { AuthenticationResponse } from '@whosaidtrue/api-interfaces';
 import { decodeUserToken } from '../../util/functions';
-import { login } from '../../features'
+import { login, closeModals } from '../../features'
 import {
     Form,
     LargeTitle,
@@ -47,15 +47,25 @@ const AuthForm: React.FC<AuthFormProps> = ({ endpoint, onSuccess, buttonlabel, $
         onSubmit: async (values) => {
             const { email, password } = values
             try {
+                // clear any error messages
                 dispatch(clearError())
                 const response = await api.post<AuthenticationResponse>(endpoint, { email, password })
                 const { token } = response.data
                 const decoded = decodeUserToken(token)
                 const { user } = decoded;
+
+                // login
                 dispatch(login({ ...user, token }))
+
+                // close any modals
+                dispatch(closeModals())
+
+                // call optional callback
                 onSuccess()
             } catch (e) {
-                if (e.response?.status === 422 && e.response?.data) {
+                const status = e.response?.status;
+                const data = e.response?.data;
+                if ((status === 422 || status === 401) && data) {
                     dispatch(setErrorThunk(e.response.data as string))
                 } else {
                     // manually set message to avoid accidentallly printing a cryptic error message on unexpected error.
@@ -82,7 +92,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ endpoint, onSuccess, buttonlabel, $
             <FormGroup>
                 <InputLabel htmlFor="email">Email</InputLabel>
                 <TextInput {...formik.getFieldProps('email')} error={emailErr} id="email" $border name="email" type="email" />
-                {emailErr ? (<ErrorText>{formik.errors.email}</ErrorText>) : null}
+                {emailErr && <ErrorText>{formik.errors.email}</ErrorText>}
             </FormGroup>
 
             {/* password */}
@@ -90,7 +100,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ endpoint, onSuccess, buttonlabel, $
                 <InputLabel htmlFor="password">Password</InputLabel>
                 <TextInput {...formik.getFieldProps('password')} id="password" error={pwErr} $border name="password" type="password" />
                 {$showMinLength && <Headline className="text-basic-gray my-3">8 character minimum length</Headline>}
-                {pwErr ? (<ErrorText>{formik.errors.password}</ErrorText>) : null}
+                {pwErr && <ErrorText>{formik.errors.password}</ErrorText>}
             </FormGroup>
 
             {/* submit */}

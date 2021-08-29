@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import jwt from 'jsonwebtoken';
+import jwt, { JsonWebTokenError } from 'jsonwebtoken';
 import { validateAuth, validateResetEmail, validateUserUpdate, validatePasswordChange, validateResetCode, validateReset } from '@whosaidtrue/validation';
 import { passport, signResetPayload } from '@whosaidtrue/middleware';
 import { ERROR_MESSAGES, } from '@whosaidtrue/util';
@@ -151,7 +151,7 @@ router.patch('/send-reset', [...validateResetEmail], async (req: Request, res: R
 
         // if no user was updated, that account doesn't exist
         if (!rows.length) {
-            res.send(404).send('Could not find a user with that email')
+            res.status(404).send('Could not find a user with that email')
         } else {
             // if code was set, send reset email
             const resetResponse = await emailService.sendResetCode(rows[0].email, code);
@@ -189,7 +189,7 @@ router.post('/validate-reset', [...validateResetCode], async (req: Request, res:
         } else {
             const { user_email } = rows[0]
             const resetToken = signResetPayload(user_email);
-            res.status(201).json({ resetToken } as ResetCodeVerificationResponse)
+            res.status(202).json({ resetToken } as ResetCodeVerificationResponse)
         }
     } catch (e) {
         logger.error(e)
@@ -197,6 +197,11 @@ router.post('/validate-reset', [...validateResetCode], async (req: Request, res:
     }
 })
 
+/**
+ * Final step in password reset process. Get token and new
+ * password from request body. Validate token. If token valid,
+ * reset pass and send auth token.
+ */
 router.patch('/reset', [...validateReset], async (req: Request, res: Response) => {
     const { password, resetToken } = req.body as ResetRequest;
     try {
@@ -204,9 +209,29 @@ router.patch('/reset', [...validateReset], async (req: Request, res: Response) =
         // earlier was verified by the server, and the user has permission
         // to set a new password.
         const { email } = jwt.verify(resetToken, process.env.JWT_SECRET) as { email: string };
+        const result = await users.resetPassword(email, password);
+
+        // can only happen if user row is deleted, or email is changed
+        if (!result.rows.length) {
+            res.status(400).send('Could not reset password')
+        } else {
+
+            // send token if success
+            const { id, email, roles } = result.rows[0];
+            const token = signUserPayload({ id, email, roles })
+            res.status(202).json({ token } as AuthenticationResponse);
+        }
     } catch (e) {
-        res.status(401).send('Unauthorized')
+
+        if (e instanceof JsonWebTokenError) {
+            res.status(401).send('Unauthorized')
+        } else {
+            res.status(500).send(ERROR_MESSAGES.unexpected)
+        }
+
     }
+
+
 })
 
 

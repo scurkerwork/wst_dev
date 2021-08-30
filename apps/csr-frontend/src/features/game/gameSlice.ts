@@ -64,9 +64,9 @@ export const initialState: GameState = {
 
 export const createGame = createAsyncThunk(
     'game/create',
-    async (createGameReq: CreateGameRequest, thunkApi) => {
+    async (deckId: number, thunkApi) => {
         try {
-            const response = await api.post('/games/create', createGameReq)
+            const response = await api.post('/games/create', { deckId } as CreateGameRequest)
             return response.data;
         } catch (e) {
             thunkApi.rejectWithValue(e.response.data)

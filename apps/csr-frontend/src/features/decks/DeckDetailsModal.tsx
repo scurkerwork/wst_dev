@@ -1,8 +1,9 @@
 import { Deck } from '@whosaidtrue/app-interfaces';
 import { Link } from 'react-router-dom';
-import { useAppSelector, useAppDispatch } from '../../app/hooks';
+import { useAppSelector } from '../../app/hooks';
 import { isLoggedIn, selectDeckCredits } from '../auth/authSlice';
-import { DeckDetails, Title1, Button, Headline } from '@whosaidtrue/ui';
+import { DeckDetails, Title1, Headline } from '@whosaidtrue/ui';
+import DeckDetailsButton from './DeckDetailsButton';
 
 export interface DeckDetailsModalProps {
     isOwned: boolean;
@@ -17,7 +18,8 @@ const DeckDetailsModal: React.FC<DeckDetailsModalProps> = ({ deck, isOwned }) =>
             <Title1 className="text-center mb-6 mt-2">{deck.name}</Title1>
             <DeckDetails {...deck}></DeckDetails>
             <div className="my-8 px-16">
-                {isOwned ? <Button>Play Deck</Button> : <Button>{deck.purchase_price}</Button>}
+                <DeckDetailsButton deck={deck} isOwned={isOwned} />
+
             </div>
             {!loggedIn && !isOwned && (<>
                 <Headline className="text-center">Already own this deck?</Headline>

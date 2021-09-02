@@ -4,6 +4,7 @@ import { FaSms } from '@react-icons/all-files/fa/FaSms';
 import { IoMdMail } from '@react-icons/all-files/io/IoMdMail';
 
 import { NoFlexBox, Button, Box, Title3, BodyMedium, Title1, Headline, BodySmall } from '@whosaidtrue/ui';
+import React from "react";
 
 const InnerBox = tw.div`
 flex
@@ -18,6 +19,17 @@ rounded-2xl
 `
 const iconClass = 'text-2xl cursor-pointer'
 const Invite: React.FC = () => {
+
+    const copyUrl = async (e: React.MouseEvent) => {
+        await navigator.clipboard.writeText('whosaidtrue.com/x/XYV1FC')
+
+
+    }
+
+    const copyCode = async (e: React.MouseEvent) => {
+        await navigator.clipboard.writeText('XYV1FC')
+
+    }
     return (
         <NoFlexBox className="w-max mx-auto text-basic-black text-center pb-16">
 
@@ -28,11 +40,11 @@ const Invite: React.FC = () => {
                     <Headline>Share Game Code</Headline>
                     <InnerBox>
                         <Title1>XYV1FC</Title1>
-                        <Button buttonStyle="inline" $secondary>Copy</Button>
+                        <Button buttonStyle="inline" $secondary onClick={copyCode}>Copy</Button>
                     </InnerBox>
                     <InnerBox>
                         <BodySmall>whosaidtrue.com/x/XYV1FC</BodySmall>
-                        <Button buttonStyle="inline" $secondary>Copy</Button>
+                        <Button buttonStyle="inline" $secondary type="button" onClick={copyUrl}>Copy</Button>
                     </InnerBox>
                     <div className="flex flex-row p-4 bg-white-ish rounded-2xl justify-center self-stretch gap-12">
                         <Headline>Share via:</Headline>

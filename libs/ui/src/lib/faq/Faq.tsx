@@ -17,8 +17,8 @@ const Faq: React.FC<FaqProps> = ({ question, children }) => {
     }
 
     return (
-        <Box onClick={clickHandler} boxstyle="white" className='text-basic-black py-6 px-16 relative select-none cursor-pointer'>
-            <Title3 className="bg-white-ish z-10">{question}</Title3>
+        <Box boxstyle="white" className='text-basic-black py-6 px-16 relative select-none'>
+            <Title3 onClick={clickHandler} className="bg-white-ish z-10 w-full cursor-pointer">{question}</Title3>
             <FaAngleRight className={`
             top-5
             right-5

@@ -21,6 +21,7 @@ function environment() {
     const clientId = process.env.NX_PAYPAL_CLIENT_ID;
     const clientSecret = process.env.PAYPAL_CLIENT_SECRET;
 
+    // don't want either in testing
     switch (process.env.NODE_ENV) {
         case 'production':
             new Paypal.core.LiveEnvironment(clientId, clientSecret);
@@ -44,7 +45,6 @@ const payPalClient = new Paypal.core.PayPalHttpClient(environment());
 router.post('/capture-paypal', [json(), ...paypalOrder], passport.authenticate('jwt', { session: false }), async (req: Request, res: Response) => {
     const { id } = req.user as TokenPayload;
     const { deckId, orderID } = req.body;
-
 
     let capture
     const request = new Paypal.orders.OrdersCaptureRequest(orderID);

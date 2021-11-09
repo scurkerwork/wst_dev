@@ -13,6 +13,7 @@ const startGame = async (socket: Socket) => {
         currentPlayers,
         readerList,
         currentQuestion,
+        currentQuestionId,
         currentSequenceIndex,
         gameStatus
     } = socket.keys;
@@ -43,29 +44,30 @@ const startGame = async (socket: Socket) => {
         startDate
     )
     const { game, question } = gameStartResult;
+    const notAnsweredKey = Keys.haveNotAnswered(question.gameQuestionId);
 
     // update game status
-    await pubClient.set(gameStatus, game.status);
+    const [, , , , , notAnsweredStrings] = await pubClient
+        .pipeline()
+        .set(gameStatus, game.status, 'EX', ONE_DAY)
+        .set(Keys.totalPlayers(question.gameQuestionId), currentCount, 'EX', ONE_DAY)
+        .set(`gameQuestions:${question.gameQuestionId}:globalTrue`, question.globalTrue, 'EX', ONE_DAY)
+        .sunionstore(notAnsweredKey, currentPlayers)
+        .expire(notAnsweredKey, ONE_DAY)
+        .smembers(notAnsweredKey)
+        .exec()
 
-    // set player count
-    await pubClient.set(Keys.totalPlayers(question.gameQuestionId), currentCount, 'EX', ONE_DAY);
-
-    // set have not answered list from players list
-    const notAnsweredKey = Keys.haveNotAnswered(question.gameQuestionId);
-    await pubClient.sunionstore(notAnsweredKey, currentPlayers);
-    await pubClient.expire(notAnsweredKey, ONE_DAY);
-
-    // get and parse set of players that have not answered
-    const notAnsweredStrings = await pubClient.smembers(notAnsweredKey);
-    const notAnsweredParsed = notAnsweredStrings.map(s => JSON.parse(s));
+    const notAnsweredParsed = notAnsweredStrings[1].map(s => JSON.parse(s));
 
     logger.debug({ message: 'Game start result', gameStartResult });
 
     // save question in redis
-    await pubClient.set(currentQuestion, JSON.stringify(question), 'EX', ONE_DAY);
-
-    // set current sequence index in Redis
-    await pubClient.set(currentSequenceIndex, 1, 'EX', ONE_DAY);
+    await pubClient
+        .pipeline()
+        .set(currentQuestion, JSON.stringify(question), 'EX', ONE_DAY)
+        .set(currentQuestionId, question.gameQuestionId, 'EX', ONE_DAY)
+        .set(currentSequenceIndex, 1, 'EX', ONE_DAY)
+        .exec()
 
     return {
         ...gameStartResult,

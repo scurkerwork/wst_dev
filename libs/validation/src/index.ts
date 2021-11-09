@@ -11,4 +11,7 @@ export * from './lib/emailOnly';
 export * from './lib/joinGame';
 export * from './lib/createPaymentIntent';
 export * from './lib/paypalOrder';
+export * from './lib/ratings';
+export * from './lib/gameIdBody';
+export * from './lib/getDeckSelectionQuery';
 export { default as validate } from './lib/validate';

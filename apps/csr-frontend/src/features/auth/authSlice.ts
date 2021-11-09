@@ -1,6 +1,7 @@
 import { createSlice, PayloadAction, createAsyncThunk } from "@reduxjs/toolkit";
 import { RootState } from "../../app/store";
 import { api } from '../../api';
+import { showSuccess } from "../modal/modalSlice";
 
 export interface AuthState {
   loggedIn: boolean;
@@ -13,6 +14,8 @@ export interface AuthState {
   authError: string;
   fetchDetailsError: string;
   updateError: string;
+  hasRequestedCredits: boolean;
+  creditRequestEmail: string;
 }
 
 export interface UserDetailsUpdate {
@@ -41,7 +44,9 @@ export const initialState: AuthState = {
   email: '',
   authError: '',
   fetchDetailsError: '',
-  updateError: ''
+  updateError: '',
+  hasRequestedCredits: false,
+  creditRequestEmail: ''
 };
 
 
@@ -62,7 +67,10 @@ export const updateAccount = createAsyncThunk<UserDetailsUpdate, { email: string
   async ({ email }, { rejectWithValue, dispatch }) => {
 
     return api.patch('/user/update', { email }).then(response => {
-      return response.data
+
+      dispatch(showSuccess('Email address successfully changed'));
+      return response.data;
+
     }).catch(e => {
       setTimeout(() => dispatch(clearError()), 2000)
       return rejectWithValue(e.response.data)
@@ -98,6 +106,7 @@ export const authSlice = createSlice({
       state.fetchDetailsError = '';
       state.updateError = ''
     }
+
   },
 
   extraReducers: (builder) => {

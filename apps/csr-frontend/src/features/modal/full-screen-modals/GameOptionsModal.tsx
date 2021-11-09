@@ -3,26 +3,30 @@ import { useAppDispatch, useAppSelector } from '../../../app/hooks';
 import { Title1, InviteLinks, Headline, ModalContent } from '@whosaidtrue/ui';
 import { clearGame, selectAccessCode, selectIsHost } from '../../game/gameSlice';
 import HostGameOptionsButtons from '../../host/HostGameOptionsButtons';
-import { Link } from 'react-router-dom';
 import { setFullModal } from '../modalSlice';
 import { clearCurrentQuestion } from '../../question/questionSlice';
+import { useSocket } from '../..';
 
 const GameOptionsModal: React.FC = () => {
     const dispatch = useAppDispatch()
     const history = useHistory();
+    const { setShouldBlock } = useSocket();
     const accessCode = useAppSelector(selectAccessCode)
     const isHost = useAppSelector(selectIsHost);
 
     const leaveGame = () => {
-        dispatch(clearGame())
+        setShouldBlock(false);
+        dispatch(clearGame());
         dispatch(clearCurrentQuestion());
-        dispatch(setFullModal(''))
-        history.push('/')
+        dispatch(setFullModal(''));
+        history.push('/');
     }
+
+    const domain = process.env.NX_IS_FOR_SCHOOLS === 'true' ? 'whosaidtrueforschools.com/x' : 'whosaidtrue.com/x';
     return (
         <ModalContent>
             <Title1 className="mt-1 mb-10">Game Options</Title1>
-            <InviteLinks accessCode={accessCode}>
+            <InviteLinks domain={domain} accessCode={accessCode}>
 
                 {/* buttons */}
                 {isHost ? <HostGameOptionsButtons /> :
@@ -45,8 +49,14 @@ const GameOptionsModal: React.FC = () => {
                     >Leave Game</button>}
 
                 {/* links */}
-                <Headline onClick={() => dispatch(setFullModal(''))} className="text-purple-light underline text-center my-8"><Link to="/contact-us">Submit a Question</Link></Headline>
-                <Headline onClick={() => dispatch(setFullModal('reportAnIssue'))} className="text-purple-light underline text-center cursor-pointer my-8">Report an issue</Headline>
+                <Headline
+                    onClick={() => dispatch(setFullModal('submitQuestion'))}
+                    className="text-purple-light underline text-center my-8 cursor-pointer">
+                    Submit a Question
+                </Headline>
+                <Headline
+                    onClick={() => dispatch(setFullModal('reportAnIssue'))}
+                    className="text-purple-light underline text-center cursor-pointer my-8">Report an issue</Headline>
             </InviteLinks>
         </ModalContent>)
 }

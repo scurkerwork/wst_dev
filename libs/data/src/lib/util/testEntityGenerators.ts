@@ -39,14 +39,14 @@ export function* testDecks(num: number, extra = '-') {
         yield {
             name: `Test Deck ${extra} ${count + 1}`,
             sort_order: 1,
-            clean: true,
+            clean: false,
             age_rating: 13,
             movie_rating: 'PG13' as MovieRating,
             sfw: true,
             status: 'active' as DeckStatus,
             description: 'A deck for testing',
             purchase_price: '2.00',
-            example_question: 'An example question',
+            sample_question: 'An sample question',
             thumbnail_url: './assets/placeholder.svg'
         }
         count += 1;
@@ -86,13 +86,19 @@ export function* testQuestions(num: number, deckId: number) {
     let count = 0;
 
     while (count < num) {
+
+        const categories = ["Entertainment", "Civics", "Spicy"];
+
+        const randNum = Math.floor(Math.random() * categories.length);
+
         yield {
             text: `Primary question text for ${count + 1}`,
             deck_id: deckId,
             text_for_guess: 'Text for guess',
             status: 'active' as QuestionStatus,
             age_rating: 13,
-            follow_up: 'Follow up'
+            follow_up: 'Follow up',
+            category: categories[randNum]
         }
         count += 1;
     }

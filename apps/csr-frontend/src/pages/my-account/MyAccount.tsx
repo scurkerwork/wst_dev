@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react'
-import { useFormik } from 'formik';
+import { useFormik, useField } from 'formik';
 import { useHistory } from 'react-router';
 import * as Yup from 'yup';
 import { useAppDispatch, useAppSelector } from '../../app/hooks';
@@ -9,6 +9,7 @@ import {
     fetchDetails,
     updateAccount,
     logout,
+    selectIsGuest,
 } from '../../features';
 import {
     Form,
@@ -28,10 +29,19 @@ const MyAccount: React.FC = () => {
     const dispatch = useAppDispatch();
     const deckCredits = useAppSelector(selectDeckCredits)
     const email = useAppSelector(selectEmail)
+    const isGuest = useAppSelector(selectIsGuest);
 
     useEffect(() => {
+        // if any guest users get here, log them out
+        if (isGuest) {
+            dispatch(logout())
+            history.push('/')
+        }
+
         dispatch(fetchDetails())
-    }, [dispatch])
+    }, [dispatch, isGuest, history])
+
+
 
     const formik = useFormik({
         initialValues: {
@@ -45,7 +55,7 @@ const MyAccount: React.FC = () => {
         }
     })
 
-    const logOutClick = (e: React.MouseEvent) => {
+    const logOutClick = () => {
         dispatch(logout())
         dispatch(setFullModal(''))
         history.push('/');
@@ -75,7 +85,7 @@ const MyAccount: React.FC = () => {
                 {/* Save/Cancel */}
                 <div className="flex flex-row gap-6 sm:gap-10 items-center">
                     <Button buttonStyle='default' type='submit'>Save Changes</Button>
-                    <Headline className="underline text-basic-black cursor-pointer" onClick={() => history.go(-1)}>Cancel</Headline>
+                    <Headline className="underline text-basic-black cursor-pointer" onClick={() => formik.setFieldValue('email', email)}>Cancel</Headline>
                 </div>
                 <h4 className="text-off-blue cursor-pointer border-b-2 border-off-blue w-max mx-auto text-xl tracking-wide font-bold leading-relaxed" onClick={logOutClick}>Log Out</h4>
             </Form>
@@ -86,7 +96,3 @@ const MyAccount: React.FC = () => {
 }
 
 export default MyAccount;
-
-{/* <Modal isOpen={changePassOpen} onRequestClose={() => dispatch(setFullModal(''))}>
-<ChangePassword />
-</Modal> */}

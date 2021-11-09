@@ -1,6 +1,5 @@
-import { createSlice } from "@reduxjs/toolkit";
+import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { RootState } from "../../app/store";
-
 
 export type FullModal = "createAccount"
     | "preGameAuth"
@@ -23,6 +22,9 @@ export type FullModal = "createAccount"
     | "confirmSkipQuestion"
     | "confirmTakeOverReading"
     | "announceWinner"
+    | "freeCreditEmailInUseError"
+    | "checkYourEmail"
+    | "submitQuestion"
     | ""
 
 export type MessageType = ''
@@ -32,6 +34,7 @@ export type MessageType = ''
     | "playerJoined"
     | "playerLeft"
     | "playerRemoved"
+    | "scoreToolTip"
 
 
 export interface ModalState {
@@ -39,6 +42,10 @@ export interface ModalState {
     messageType: MessageType;
     messageContent: string;
     isPersistent: boolean;
+    loaderMessage: string;
+    showLoaderMessage: boolean;
+    scoreTooltipDismissed: boolean; // sets whether user will see it again next question
+    scoreTooltipShowing: boolean; // sets whether should be showing right now
 
 }
 
@@ -46,7 +53,11 @@ export const initialState: ModalState = {
     fullModal: '',
     messageType: '',
     messageContent: '',
-    isPersistent: false
+    loaderMessage: '',
+    showLoaderMessage: false,
+    isPersistent: false,
+    scoreTooltipDismissed: false,
+    scoreTooltipShowing: false,
 }
 
 export const modalSlice = createSlice({
@@ -81,6 +92,15 @@ export const modalSlice = createSlice({
             state.messageContent = action.payload;
         },
 
+        showLoaderMessage: (state, action: PayloadAction<string>) => {
+            state.showLoaderMessage = true;
+            state.loaderMessage = action.payload;
+        },
+
+        clearLoaderMessage: (state) => {
+            state.showLoaderMessage = false;
+            state.loaderMessage = '';
+        },
         showPlayerJoined: (state, action) => {
             state.messageType = 'playerJoined';
             state.messageContent = `${action.payload} has joined the game!`;
@@ -95,8 +115,18 @@ export const modalSlice = createSlice({
             state.messageType = 'playerRemoved';
             state.messageContent = `${action.payload} has been removed from the game`;
             state.isPersistent = false;
+        },
+        setShowScoreTooltip: (state, action) => {
+            state.scoreTooltipShowing = action.payload;
+        },
+        dismissScoreTooltip: (state) => {
+            state.scoreTooltipDismissed = true;
+            state.scoreTooltipShowing = false;
+        },
+        clearScoreTooltipDismissed: (state) => { // so that the tooltip will show again next game
+            state.scoreTooltipDismissed = false;
         }
-    }
+    },
 })
 
 // actions
@@ -108,7 +138,12 @@ export const {
     showError,
     showPlayerJoined,
     showPlayerLeft,
-    showPlayerRemoved
+    showPlayerRemoved,
+    setShowScoreTooltip,
+    dismissScoreTooltip,
+    clearScoreTooltipDismissed,
+    showLoaderMessage,
+    clearLoaderMessage
 } = modalSlice.actions;
 
 // selectors
@@ -116,5 +151,8 @@ export const selectFullModal = (state: RootState) => state.modals.fullModal;
 export const selectMessageType = (state: RootState) => state.modals.messageType;
 export const selectMessageContent = (state: RootState) => state.modals.messageContent;
 export const selectIsPersistent = (state: RootState) => state.modals.isPersistent;
+export const selectScoreTooltipDismissed = (state: RootState) => state.modals.scoreTooltipDismissed;
+export const selectScoreTooltipShowing = (state: RootState) => state.modals.scoreTooltipShowing;
+export const selectLoaderMessage = (state: RootState) => state.modals.loaderMessage
 
 export default modalSlice.reducer;

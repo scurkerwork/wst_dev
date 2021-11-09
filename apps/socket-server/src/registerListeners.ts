@@ -2,25 +2,30 @@ import { Server, Socket } from "socket.io";
 import { types, payloads } from "@whosaidtrue/api-interfaces";
 import { logger, logIncoming, logOutgoing, logError } from '@whosaidtrue/logger';
 import { playerValueString } from './util';
+import { games } from './db';
 import { pubClient } from "./redis";
 import { ONE_DAY } from "./constants";
 import startGame from "./listener-helpers/startGame";
 import submitAnswerPart1 from "./listener-helpers/submitAnswerPart1";
 import submitAnswerPart2 from "./listener-helpers/submitAnswerPart2";
 import saveScores from "./listener-helpers/saveScores";
-import { games } from "./db";
 import nextQuestion from "./listener-helpers/nextQuestion";
+import removePlayer from "./listener-helpers/removePlayer";
+import endGame from './listener-helpers/endGame';
+import { PlayerRef } from "@whosaidtrue/app-interfaces";
 
 
 const registerListeners = (socket: Socket, io: Server) => {
     const {
         currentPlayers,
-        removedPlayers,
+        currentQuestionId,
         currentSequenceIndex,
         totalQuestions,
         gameStatus,
-        latestResults,
-        currentQuestion
+        bucketList,
+        groupVworld,
+        playerMostSimilar,
+        locks
     } = socket.keys;
 
     // source info
@@ -30,15 +35,80 @@ const registerListeners = (socket: Socket, io: Server) => {
         gameId: socket.gameId
     }
 
-    // handle disconnect
-    socket.on('disconnect', async () => {
-        const res = await pubClient.srem(currentPlayers, playerValueString(socket));
-        logger.debug(`number of players removed in disconnect handler: ${res}`);
+    /**
+     * DISCONNECT
+     */
+    socket.on('disconnect', async (reason) => {
+
+        logger.debug({
+            message: '[disconnect] Player disconnected',
+            playerId: socket.playerId,
+            playerName: socket.playerName,
+            isHost: socket.isHost,
+            reason // "client namespace disconnect" = intentional, e.g. player leaves game
+        });
+
+        const [, numPlayers, status] = await pubClient
+            .pipeline()
+            .srem(currentPlayers, playerValueString(socket))
+            .scard(currentPlayers)
+            .get(gameStatus)
+            .exec();
+
+
+        if (!numPlayers[1] && status[1] !== 'finished') {
+
+            // set status to finished in DB and redis
+            await pubClient.set(gameStatus, 'finished', 'EX', ONE_DAY);
+            await games.endGame(socket.gameId);
+
+            logger.debug({
+                message: '[disconnect] last player disconnected. Ending game.',
+            })
+
+            // host left on purpose
+        } else if (socket.isHost && reason === "client namespace disconnect" && status[1] !== 'finished') {
+            const [questionId, idx] = await pubClient
+                .pipeline()
+                .get(currentQuestionId)
+                .get(currentSequenceIndex)
+                .set(gameStatus, 'postGame', 'EX', ONE_DAY)
+                .exec()
+
+            if (idx[1] > 1) {
+                // calculate scores
+                const result = await saveScores(Number(questionId[1]), socket.gameId);
+
+                logger.debug({
+                    message: '[HostDisconnect] Score calculation results',
+                    ...result
+                })
+
+                // end game
+                sendToOthers(types.GAME_END, result as payloads.QuestionEnd);
+                sendToOthers(types.HOST_LEFT);
+
+            } else {
+                logger.debug({
+                    message: '[HostDisconnect] Host left before first question'
+                })
+                sendToOthers(types.HOST_LEFT_NO_RESULTS) // host left before first question was over. No need to save
+            }
+
+        } else if (!socket.isHost && reason === "client namespace disconnect") {
+            const isRemoved = await pubClient.sismember(socket.keys.removedPlayers, `${socket.playerId}`);
+
+            if (!isRemoved) {
+                sendToOthers(types.PLAYER_LEFT_GAME, { id: socket.playerId, player_name: socket.playerName } as PlayerRef)
+
+            }
+        }
     })
 
-    /**
+    /****************************
      * MESSAGE HELPERS
-     */
+     ****************************/
+
     // send to connected clients excluding sender
     const sendToOthers = (type: string, payload?: unknown) => {
         socket.to(`${socket.gameId}`).emit(type, payload)
@@ -46,11 +116,15 @@ const registerListeners = (socket: Socket, io: Server) => {
         logOutgoing(type, payload, "others", source);
     }
 
+    socket.sendToOthers = sendToOthers;
+
     // send to connected clients including sender
     const sendToAll = (type: string, payload?: unknown) => {
         io.to(`${socket.gameId}`).emit(type, payload);
         logOutgoing(type, payload, "all", source);
     }
+
+    socket.sendToAll = sendToAll
 
     /*******************************************************************
      * EVENT LISTENERS
@@ -96,24 +170,50 @@ const registerListeners = (socket: Socket, io: Server) => {
             sendToAll(types.SET_HAVE_NOT_ANSWERED, pendingList)
 
             if (!pendingList.length) {
-                const current = await pubClient.get(currentSequenceIndex)
-                const total = await pubClient.get(totalQuestions)
+                const [current, total] = await pubClient
+                    .pipeline()
+                    .get(currentSequenceIndex)
+                    .get(totalQuestions)
+                    .exec()
+
+                // after 3rd question, start sending facts
+                if (current[1] && Number(current[1]) >= 4) {
+
+                    const [bucketListResponse, groupVworldResponse] = await pubClient
+                        .pipeline()
+                        .hgetall(groupVworld)
+                        .hgetall(bucketList)
+                        .exec()
+
+                    sendToAll(types.FUN_FACTS,
+                        {
+                            bucketList: bucketListResponse[1],
+                            groupVworld: groupVworldResponse[1]
+                        })
+                }
 
                 // if last question, move to game results
-                if (current === total) {
+                if (current[1] === total[1]) {
 
                     // calculate scores
                     const result = await saveScores(msg.gameQuestionId, socket.gameId);
 
+                    logger.debug({
+                        message: 'Score calculation results',
+                        event: types.ANSWER_PART_2,
+                        ...result
+                    })
+
+                    await pubClient.set(gameStatus, 'finished', 'EX', ONE_DAY)
                     // end game
-                    sendToAll(types.GAME_END, result as payloads.QuestionEnd)
+                    sendToAll(types.GAME_END, result as payloads.QuestionEnd);
                 } else {
 
                     // calculate scores
                     const result = await saveScores(msg.gameQuestionId, socket.gameId);
 
                     // send result
-                    sendToAll(types.QUESTION_END, result as payloads.QuestionEnd)
+                    sendToAll(types.QUESTION_END, result as payloads.QuestionEnd);
                 }
             }
 
@@ -124,19 +224,57 @@ const registerListeners = (socket: Socket, io: Server) => {
         }
     })
 
+    // sent by client after receiving a question/game end request. Gets the player most similar to them.
+    socket.on(types.FETCH_MOST_SIMILAR, async (_, cb) => {
+        try {
+            const [r1, r2] = await pubClient
+                .pipeline()
+                .zrevrange(playerMostSimilar, -1, -1, 'WITHSCORES')
+                .hgetall(`games:${socket.gameId}:mostSimilar`)
+                .exec()
+
+            const mostSimilar = r1[1];
+            const groupMostSimilar = r2[1];
+
+            const result: payloads.FetchMostSimilar = {
+                name: mostSimilar[0] ?? '',
+                numSameAnswer: mostSimilar[1] ? Number(mostSimilar[1]) : 0,
+                groupMostSimilarNames: groupMostSimilar.players ?? '',
+                groupMostSimilarNumber: groupMostSimilar.numSameAnswer ? Number(groupMostSimilar.numSameAnswer) : 0
+            }
+
+            logger.debug({
+                message: '[FetchMostSimilar] result',
+                source: socket.playerName,
+                result
+            })
+            cb(result) // send result back to client
+        } catch (e) {
+            logError('Error while fetching most similar player', e)
+            cb('error')
+        }
+
+    })
+
     /*******************************************************************
      * HOST ONLY LISTENERS
      ********************************************************************/
 
     if (socket.isHost) {
 
-
         /**
          * START GAME
          */
         socket.on(types.START_GAME, async (_, cb) => {
+            logIncoming(types.START_GAME, {}, source);
 
             try {
+                const startLock = await pubClient.set(`${locks}:start`, 1, 'EX', 5, 'NX')
+
+                if (!startLock) {
+                    cb('already started');
+                    return;
+                }
                 // update and fetch data from db
                 const startResult = await startGame(socket);
                 const { game, question, currentCount, haveNotAnswered } = startResult;
@@ -150,9 +288,13 @@ const registerListeners = (socket: Socket, io: Server) => {
                     status: 'question'
                 } as payloads.SetQuestionState)
 
+                cb('ok')
+
             } catch (e) {
                 logError(`Error while starting  game: ${socket.gameId}.`, e)
                 cb('error')
+            } finally {
+                await pubClient.del(`${locks}:start`);
             }
         })
 
@@ -162,40 +304,55 @@ const registerListeners = (socket: Socket, io: Server) => {
         socket.on(types.END_GAME, async (ack) => {
             logIncoming(types.END_GAME, {}, source);
 
-            // use game status as a sort of lock to deduplicate requests
-            const status = await pubClient.get(gameStatus);
+            const endGameLock = await pubClient.set(`${locks}:endGame`, 1, 'EX', 5, 'NX')
 
-            // if status is anything other than 'inProgress', do nothing.
-            if (status !== 'inProgress') return;
+            if (!endGameLock) {
+                ack('already ending');
+                return;
+            }
 
             try {
+                // calculate results
+                const result = await endGame(socket);
 
-                const [, questionIdResult] = await pubClient
-                    .pipeline()
-                    .set(gameStatus, 'calculatingScores')
-                    .get(`${currentQuestion}:id`)
-                    .exec()
+                if (result) {
 
-                const currentQuestionId = questionIdResult[1];
-                const result = await saveScores(currentQuestionId, socket.gameId);
 
-                // end game in DB
-                await games.endGame(socket.gameId);
+                    const sequenceIndex = await pubClient.get(currentSequenceIndex);
 
-                await pubClient.pipeline()
-                    .set(latestResults, JSON.stringify(result), 'EX', ONE_DAY)
-                    .set(gameStatus, 'finished')
-                    .exec()
+                    // after 4th question, start sending facts
+                    if (sequenceIndex && Number(sequenceIndex) > 4) {
+                        const [bucketListResponse, groupVworldResponse] = await pubClient
+                            .pipeline()
+                            .hgetall(groupVworld)
+                            .hgetall(bucketList)
+                            .exec()
 
-                // send results
-                sendToOthers(types.GAME_END_NO_ANNOUNCE, result as payloads.QuestionEnd)
+                        sendToAll(types.FUN_FACTS,
+                            {
+                                bucketList: bucketListResponse[1],
+                                groupVworld: groupVworldResponse[1]
+                            })
+                    }
 
-                // acknowledge complete
-                ack('ok')
+                    await pubClient.set(gameStatus, 'finished', 'EX', ONE_DAY);
+
+                    // send results
+                    sendToOthers(types.GAME_END_NO_ANNOUNCE, result as payloads.QuestionEnd);
+
+                    // acknowledge complete
+                    ack('ok');
+                    return;
+                }
+
+                ack('game not in progress')
+
             } catch (e) {
                 logError('Error while ending game', e);
-                await pubClient.set(gameStatus, 'inProgress'); // reset so request can be sent again
+                await pubClient.set(gameStatus, 'inProgress', 'EX', ONE_DAY); // reset so request can be sent again
                 ack('error')
+            } finally {
+                await pubClient.del(`${locks}:endGame`)
             }
         })
 
@@ -204,16 +361,7 @@ const registerListeners = (socket: Socket, io: Server) => {
         */
         socket.on(types.REMOVE_PLAYER, async (msg: payloads.PlayerEvent) => {
             logIncoming(types.REMOVE_PLAYER, msg, source)
-
-            // add player to removed players set
-            const remResponse = await pubClient.sadd(removedPlayers, msg.id);
-            await pubClient.expire(removedPlayers, ONE_DAY);
-
-            logger.debug(`Player added to removed list: ${remResponse}`)
-
-            // remove player from current players
-            await pubClient.srem(currentPlayers, JSON.stringify(msg)); // remove from redis
-            sendToAll(types.REMOVE_PLAYER, msg);
+            removePlayer(socket, msg);
         })
 
         /**
@@ -222,17 +370,58 @@ const registerListeners = (socket: Socket, io: Server) => {
         socket.on(types.SKIP_QUESTION, async (msg: payloads.QuestionSkip, ack) => {
             logIncoming(types.SKIP_QUESTION, msg, source)
 
-            try {
-                const nextQuestionResult = await nextQuestion(socket)
-                sendToAll(types.SET_QUESTION_STATE, {
-                    ...nextQuestionResult,
-                    status: 'question'
-                } as payloads.SetQuestionState)
+            const skipLock = await pubClient.set(`${locks}:skipQuestion`, 1, 'EX', 5, 'NX');
 
-                ack('ok')
+            if (!skipLock) {
+                ack('already in progress');
+                return;
+            }
+
+            try {
+                // check if last question
+                const [currentIndex, total] = await pubClient.mget(currentSequenceIndex, totalQuestions);
+
+                if (Number(currentIndex) >= Number(total)) {
+                    // calculate results
+                    const result = await endGame(socket);
+
+                    const [bucketListResponse, groupVworldResponse] = await pubClient
+                        .pipeline()
+                        .hgetall(groupVworld)
+                        .hgetall(bucketList)
+                        .exec()
+
+                    sendToAll(types.FUN_FACTS,
+                        {
+                            bucketList: bucketListResponse[1],
+                            groupVworld: groupVworldResponse[1]
+                        })
+
+                    await pubClient.set(gameStatus, 'finished', 'EX', ONE_DAY);
+
+                    // send results
+                    sendToAll(types.GAME_END, result as payloads.QuestionEnd)
+
+                    // acknowledge complete
+                    ack('ok')
+
+                } else {
+
+                    const nextQuestionResult = await nextQuestion(socket)
+                    sendToAll(types.SET_QUESTION_STATE, {
+                        ...nextQuestionResult,
+                        status: 'question'
+                    } as payloads.SetQuestionState)
+
+                    ack('ok')
+                }
+
             } catch (e) {
                 logError('Error while skipping question', e)
                 ack('error')
+            } finally {
+                // release lock no matter what
+                await pubClient.del(`${locks}:skipQuestion`);
             }
         })
 
@@ -255,19 +444,69 @@ const registerListeners = (socket: Socket, io: Server) => {
          * END QUESTION AND MOVE TO ANSWERS
          */
         socket.on(types.MOVE_TO_ANSWER, async (msg: payloads.QuestionSkip, ack) => {
-            logIncoming(types.MOVE_TO_ANSWER, undefined, source)
+            logIncoming(types.MOVE_TO_ANSWER, msg, source);
 
+            // acquire lock
+            const endQuestionLock = await pubClient.set(`${locks}:endQuestion`, 1, 'EX', 5, 'NX');
+
+            if (!endQuestionLock) {
+                ack('in progress');
+                return;
+            }
+
+            let lastQuestion = false;
             try {
 
-                // calculate scores
-                const result = await saveScores(msg.gameQuestionId, socket.gameId);
+                let result: payloads.QuestionEnd;
+                const [sequenceIndex, total] = await pubClient.mget(currentSequenceIndex, totalQuestions);
 
-                // send result
-                sendToAll(types.QUESTION_END, result as payloads.QuestionEnd);
+                if ((sequenceIndex && total) && Number(sequenceIndex) >= Number(total)) {
+                    lastQuestion = true;
+                    result = await endGame(socket);
+                    logger.debug({
+                        message: '[EndQuestion/last] Score calculation results',
+                        ...result
+                    })
+                } else {
+
+                    // calculate scores
+                    result = await saveScores(msg.gameQuestionId, socket.gameId);
+
+                    logger.debug({
+                        message: '[EndQuestion/notLast] Score calculation results',
+                        ...result
+                    })
+
+
+                }
+
+                // after 4th question, start sending facts
+                if (sequenceIndex && Number(sequenceIndex) > 4) {
+                    const [bucketListResponse, groupVworldResponse] = await pubClient
+                        .pipeline()
+                        .hgetall(groupVworld)
+                        .hgetall(bucketList)
+                        .exec()
+
+                    sendToAll(types.FUN_FACTS,
+                        {
+                            bucketList: bucketListResponse[1],
+                            groupVworld: groupVworldResponse[1]
+                        })
+                }
+
+                if (lastQuestion) {
+                    await pubClient.set(gameStatus, 'finished', 'EX', ONE_DAY);
+                }
+
+                sendToAll(lastQuestion ? types.END_GAME : types.QUESTION_END, result as payloads.QuestionEnd);
                 ack('ok')
             } catch (e) {
-                logError('Error skipping to results', e)
-                ack('error')
+                logError('Error skipping to results', e);
+                ack('error');
+            } finally {
+                // release lock
+                await pubClient.del(`${locks}:endQuestion`);
             }
         });
 
@@ -275,19 +514,31 @@ const registerListeners = (socket: Socket, io: Server) => {
         * NEXT QUESTION
         */
         socket.on(types.START_NEXT_QUESTION, async (_, ack) => {
-            logIncoming(types.START_NEXT_QUESTION, {}, source)
+            logIncoming(types.START_NEXT_QUESTION, {}, source);
+
+            // acquire lock
+            const nextQuestionLock = await pubClient.set(`${locks}:nextQuestion`, 1, 'EX', 5, 'NX');
+
+            if (!nextQuestionLock) {
+                ack('in progress');
+                return;
+            }
 
             try {
-                const nextQuestionResult = await nextQuestion(socket)
+                const nextQuestionResult = await nextQuestion(socket);
                 sendToAll(types.SET_QUESTION_STATE, {
                     ...nextQuestionResult,
                     status: 'question'
-                } as payloads.SetQuestionState)
+                } as payloads.SetQuestionState);
 
                 ack('ok')
             } catch (e) {
-                logError('Error while starting question', e)
-                ack('error')
+                logError('Error while starting question', e);
+                ack('error');
+            } finally {
+                // release lock
+                await pubClient.del(`${locks}:nextQuestion`);
+
             }
         })
 

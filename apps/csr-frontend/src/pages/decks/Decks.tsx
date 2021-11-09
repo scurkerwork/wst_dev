@@ -1,18 +1,21 @@
 import { useEffect } from 'react'
-import { useAppDispatch } from '../../app/hooks';
-import { DeckSelection } from '../../features';
-import { clearDecks } from '../../features/decks/deckSlice';
+import { useAppDispatch, useAppSelector } from '../../app/hooks';
+import { DeckSelection, selectIsGuest } from '../../features';
+import { clearSelectedDeck } from '../../features/decks/deckSlice';
+import { selectIsHost } from '../../features';
 
 
 const Decks: React.FC = () => {
     const dispatch = useAppDispatch();
+    const isGuest = useAppSelector(selectIsGuest);
+    const isHost = useAppSelector(selectIsHost);
 
     // clear state when unmount
     useEffect(() => {
         return () => {
-            dispatch(clearDecks())
+            dispatch(clearSelectedDeck())
         }
-    }, [dispatch])
+    }, [dispatch, isGuest, isHost])
 
     return (
         <DeckSelection />

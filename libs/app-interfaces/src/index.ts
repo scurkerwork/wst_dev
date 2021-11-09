@@ -20,6 +20,7 @@ export type UserRating = 'great' | 'bad';
 export type DeckStatus = 'active' | 'inactive' | 'pending';
 export type AnswerValue = 'true' | 'false' | 'pass';
 export type UserRole = 'user' | 'admin' | 'test' | 'guest';
+export type JobStatus = 'pending' | 'completed' | 'failed' | 'canceled';
 
 export type GameStatus = 'lobby'
     | 'inProgress'
@@ -53,7 +54,7 @@ export type Insert<T> = Omit<T, 'id' | 'created_at' | 'updated_at'>;
 /**
  * Type used to define the movie rating column on decks
  */
-export type MovieRating = "PG" | "PG13" | "R"
+export type MovieRating = "PG" | "PG13" | "R" | "NC17"
 
 
 /**
@@ -83,22 +84,11 @@ export type ThemeColor = 'purple-light'
     | 'red-subtle-fill'
     | 'red-light'
 
-export interface DeckSelectionOptions {
-    pageSize: number;
-    pageNumber: number;
-    ageRating?: number;
-}
-export interface UserDeckSelectionOptions extends DeckSelectionOptions {
-    userId: number;
-}
-
-export type ScoreMap = Record<string, PlayerScore>
-
-export interface PlayerScore {
+export interface ScoreboardEntry {
+    player_name: string;
+    score: number;
     rank: number;
-    name: string;
-    points: number;
-    rankDiff: number;
+    rankDifference: number;
 }
 
 export interface PlayerRef {
@@ -123,6 +113,7 @@ export interface User {
     roles: UserRole[];
     question_deck_credits: number;
     test_account: boolean;
+    domain: string;
     created_at?: Date;
     updated_at?: Date
 }
@@ -139,7 +130,7 @@ export interface Deck {
     description: string;
     thumbnail_url?: string;
     purchase_price: string; // needs to be a string with decimals. Postgres will convert to higher precision number in the DB.
-    example_question?: string;
+    sample_question?: string;
     created_at?: Date;
     updated_at?: Date
 }
@@ -152,6 +143,7 @@ export interface Game {
     start_date?: Date;
     host_name?: string;
     host_id: number;
+    domain: string;
     end_date?: Date;
     created_at?: Date;
     updated_at?: Date
@@ -160,6 +152,7 @@ export interface Game {
 export interface Question {
     id: number;
     text: string;
+    category: string;
     text_for_guess: string;
     follow_up: string;
     deck_id: number;
@@ -243,6 +236,50 @@ export interface UserQuestionRating {
     updated_at?: Date;
 }
 
+export interface Job {
+    id: number;
+    type: string;
+    status: JobStatus;
+    result?: string;
+    task_table?: string;
+    task_id?: number;
+    scheduled_at: Date;
+    started_at?: Date;
+    completed_at?: Date;
+    canceled_at: Date;
+    created_at?: Date;
+    updated_at?: Date;
+}
+
+export interface JobTransaction extends Job {
+    startJob(): Promise<any>;
+    finishJob(status?: 'completed' | 'failed', result?: string): Promise<any>;
+    abortJob(): Promise<any>;
+}
+
+export interface Email {
+    id: number;
+    user_id: number;
+    from?: string;
+    to: string;
+    cc?: string;
+    bcc?: string;
+    subject?: string;
+    text?: string;
+    html?: string;
+    template_key?: string;
+    template_data?: string;
+    created_at?: string;
+    updated_at?: string;
+}
+
+export interface Template {
+    key: string,
+    sendgrid_template_id: string,
+    created_at?: string;
+    updated_at?: string;
+}
+
 export type InsertUserQuestionRating = Insert<UserQuestionRating>;
 export type InsertQuestionRating = Insert<UserQuestionRating>;
 export type InsertOrder = Insert<Order>;
@@ -255,6 +292,7 @@ export type InsertAnwser = Insert<GameAnswer>;
 export type InsertDeck = Insert<Deck>;
 export type InsertQuestion = Insert<Question>;
 export type InsertGame = Insert<Game>;
+export type InsertEmail = Insert<Email>;
 
 export interface JoinGameResult {
     status: GameStatus
@@ -281,11 +319,18 @@ export interface NextQuestionResult {
     questionId: number;
     gameQuestionId: number;
     numPlayers: number;
+    category: string
     sequenceIndex: number;
     readerId: number;
     readerName: string;
     followUp: string;
     text: string;
     textForGuess: string;
+    globalTrue: number;
+}
+
+export interface GroupComparison {
+    textForGuess: string;
+    groupTrue: number;
     globalTrue: number;
 }

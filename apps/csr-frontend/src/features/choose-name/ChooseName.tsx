@@ -4,13 +4,12 @@ import { useAppSelector, useAppDispatch } from '../../app/hooks';
 import useNames from './useNames';
 import {
     selectNameRerolls,
-    setRemainingNameOptions,
     setCurrentNameOptions,
     selectCurrentNameOptions,
     selectSeen,
     sendReport
 } from './chooseNameSlice';
-import { setGameStatus, clearGame, joinGame, selectIsHost } from '../game/gameSlice';
+import { setGameStatus, clearGame, joinGame, selectIsHost, endGameFromApi, selectGameId } from '../game/gameSlice';
 import {
     Button,
     RerollNamesButton,
@@ -21,19 +20,22 @@ import {
     Title1
 } from '@whosaidtrue/ui';
 import { NameObject } from '@whosaidtrue/app-interfaces';
-import { JoinGameResponse, NameRequestResponse, StatusRequestResponse } from '@whosaidtrue/api-interfaces';
+import { JoinGameResponse, StatusRequestResponse } from '@whosaidtrue/api-interfaces';
 import { api } from '../../api'
 import { showError } from '../modal/modalSlice';
 import { clearCurrentQuestion, clearNameChoices } from '..';
+import { clearHost } from '../host/hostSlice';
 
 const ChooseName: React.FC = () => {
     const dispatch = useAppDispatch();
+    const [shouldBlock, setShouldBlock] = useState(true);
     const { access_code } = useParams<{ access_code: string }>()
     const history = useHistory();
     const names = useAppSelector(selectCurrentNameOptions);
     const rerolls = useAppSelector(selectNameRerolls);
     const seen = useAppSelector(selectSeen)
     const isHost = useAppSelector(selectIsHost);
+    const gameId = useAppSelector(selectGameId);
 
     useNames();
 
@@ -41,20 +43,26 @@ const ChooseName: React.FC = () => {
         dispatch(setGameStatus('choosingName'));
 
         // show confirmation dialog and clear game state if confirmed
+        // eslint-disable-next-line
         const unblock = history.block((...args: any[]) => {
 
             // DEV_NOTE: react-router-dom's type definitions are incorrect at the moment, so any type
             // has to be used here to prevent compiler errors
             // args[0] is a location object, and args[1] is a navigation action type
 
+            // eslint-disable-next-line
             const path = args[0].pathname as any
-            if (path !== '/play') {
+            if (path !== '/play' && shouldBlock) {
                 const confirmMessage = isHost ? 'Are you sure you want to leave? Since you are the host, this will end the game for everyone' :
                     'Are you sure you want to leave the game?';
 
                 if (window.confirm(confirmMessage)) {
                     dispatch(clearGame());
                     dispatch(clearCurrentQuestion());
+
+                    if (isHost) {
+                        dispatch(endGameFromApi(gameId))
+                    }
                     return true;
                 }
 
@@ -88,7 +96,7 @@ const ChooseName: React.FC = () => {
             dispatch(clearNameChoices());
             unblock();
         }
-    }, [dispatch, history, access_code, isHost])
+    }, [dispatch, history, access_code, isHost, shouldBlock, gameId])
 
     // send request to join the game
     const join = async (name: string) => {
@@ -96,10 +104,19 @@ const ChooseName: React.FC = () => {
             dispatch(joinGame(result.data))
             history.push('/play')
         }).catch(e => {
-            if (e.status === 401) {
+            setShouldBlock(false);
+            dispatch(clearGame());
+            dispatch(clearCurrentQuestion());
+            dispatch(clearHost());
+
+            if (e.response.status === 401) {
                 dispatch(showError('That name is no longer available. Please select another'))
-            } else {
-                dispatch(showError('An error occurred while attempting to join game'))
+            } else if (e.response.status === 403) {
+                dispatch(showError('The game you are atempting to join has already finished'));
+                history.push('/');
+            }
+            else {
+                dispatch(showError('An error occurred while attempting to join game'));
                 history.push('/')
             }
         })
@@ -124,7 +141,7 @@ const ChooseName: React.FC = () => {
 
     // get the next set of names
     const rerollHandler = (e: React.MouseEvent) => {
-        e.preventDefault()
+        e.preventDefault();
         dispatch(setCurrentNameOptions());
     }
 

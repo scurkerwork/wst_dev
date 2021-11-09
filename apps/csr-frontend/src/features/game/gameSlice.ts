@@ -1,6 +1,7 @@
-import { createSlice, createSelector, PayloadAction } from "@reduxjs/toolkit";
+import { createSlice, createSelector, PayloadAction, createAsyncThunk } from "@reduxjs/toolkit";
 import { JoinGameResponse } from '@whosaidtrue/api-interfaces';
-import { Deck, UserGameStatus, PlayerRef, PlayerScore, GameStatus } from '@whosaidtrue/app-interfaces';
+import { Deck, UserGameStatus, PlayerRef, GameStatus } from '@whosaidtrue/app-interfaces';
+import { api } from '../../api';
 import omit from 'lodash.omit'
 
 // local imports
@@ -8,6 +9,7 @@ import { RootState } from "../../app/store";
 
 export interface GameState {
     gameStatus: GameStatus | '';
+    hasRatedApp: boolean;
     playerStatus: UserGameStatus;
     shouldAnnounce: boolean;
     hasPassed: boolean;
@@ -32,6 +34,7 @@ export const initialGameState: GameState = {
     playerStatus: 'notInGame',
     shouldAnnounce: false, // should there be a winner announcement when user gets to results
     gameToken: '',
+    hasRatedApp: false,
     hasPassed: false,
     gameId: 0,
     deck: {
@@ -58,6 +61,17 @@ export const initialGameState: GameState = {
     playerId: 0,
     winner: '',
 }
+
+/**
+ * Used to end a game from the API. This is useful
+ * when a game
+ */
+export const endGameFromApi = createAsyncThunk<void, number>(
+    'game/endGameFromApi',
+    async (gameId) => {
+        await api.patch('/games/end', { gameId });
+    }
+)
 
 export const gameSlice = createSlice({
     name: "game",
@@ -113,6 +127,7 @@ export const gameSlice = createSlice({
                 disconnectedPlayers,
                 totalQuestions
             } = action.payload;
+
             state.gameId = gameId;
             state.access_code = access_code;
             state.gameStatus = status;
@@ -121,7 +136,12 @@ export const gameSlice = createSlice({
             state.inactivePlayers = inactivePlayers;
             state.totalQuestions = totalQuestions;
         },
-
+        setHasRatedApp: (state, action) => {
+            state.hasRatedApp = action.payload
+        },
+        removeFromGame: (state) => {
+            state.playerStatus = 'removed';
+        },
         setInactive: (state, action) => {
             state.inactivePlayers = [...action.payload]
         },
@@ -131,6 +151,7 @@ export const gameSlice = createSlice({
                 return { ...acc, [player.id]: player }
             }, {});
         },
+
         joinGame: (state, action: PayloadAction<JoinGameResponse>) => {
             const {
                 status,
@@ -160,6 +181,7 @@ export const gameSlice = createSlice({
 
 // actions
 export const {
+    removeFromGame,
     setPlayerName,
     initialRequest,
     setGameStatus,
@@ -174,7 +196,7 @@ export const {
     setPlayers,
     setPlayerStatus,
     setHasPassed,
-    endGame
+    endGame,
 } = gameSlice.actions;
 
 // selectors
@@ -193,8 +215,11 @@ export const selectPlayerStatus = (state: RootState) => state.game.playerStatus;
 export const selectPlayers = (state: RootState) => state.game.players;
 export const selectTotalQuestions = (state: RootState) => state.game.totalQuestions;
 export const selectShouldAnnounce = (state: RootState) => state.game.shouldAnnounce;
+
 export const selectPlayerList = createSelector(selectPlayers, (players) => {
     return Object.values(players);
 })
+
+export const selectNumPlayersInGame = (state: RootState) => Object.keys(state.game.players).length;
 
 export default gameSlice.reducer;

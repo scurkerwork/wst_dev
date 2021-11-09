@@ -15,10 +15,8 @@ export { default as SelectDropdown } from './lib/inputs/select-dropdown/SelectDr
 export { default as Toggle } from './lib/inputs/toggle/Toggle';
 export { default as NavLogo } from './lib/nav-logo/NavLogo';
 export { default as RerollNamesButton } from './lib/button/reroll-names/RerollNames'
-export { default as ThumbsUp } from './lib/button/thumbs-up/ThumbsUp';
-export { default as ThumbsDown } from './lib/button/thumbs-down/ThumbsDown';
 export { default as ReaderAnnouncement } from './lib/messages/reader-announcement/ReaderAnnouncement';
-export { default as FaqCarousel } from './lib/faq/Faq';
+export { default as FaqItem } from './lib/faq/FaqItem';
 export { default as DeckCard } from './lib/decks/deck-card/DeckCard';
 export { default as DeckSet } from './lib/decks/deck-set/DeckSet';
 export { default as Divider } from './lib/divider/Divider';
@@ -49,4 +47,7 @@ export { default as QuestionAnswers } from './lib/gameplay/question-answers/Ques
 export { default as SubmitRating } from './lib/submit-rating/SubmitRating';
 export { default as WinnerAnnouncement } from './lib/gameplay/winner-announcement/WinnerAnnouncement';
 export { default as FinalScores } from './lib/gameplay/final-scores/FinalScores';
+export { default as Faqs } from './lib/faq/Faq';
+export { default as InfoPage } from './lib/info-page/InfoPage';
 export * from './lib/typography/Typography';
+export * from './lib/fun-facts';

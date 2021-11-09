@@ -21,17 +21,20 @@ module.exports = {
                 'p35': '35%',
                 'p25': '25%',
                 'p15': '15%',
-                'p10': '10%'
+                'p10': '10%',
+                'p85': '85%'
             },
             width: {
                 'p99': '99%', // custom width for buttons. Full width breaks the style.
                 '40rem': '40rem',
                 '52rem': '52rem',
-                '28rem': '28rem'
+                '28rem': '28rem',
+                '4-1/2': '4.5rem'
             },
             height: {
                 '32rem': '32rem',
-                '36rem': '36rem'
+                '36rem': '36rem',
+                '4-1/2': '4.5rem'
             },
 
             fontSize: {
@@ -108,9 +111,8 @@ module.exports = {
                 }
             },
             animation: {
-                grow: 'grow 75ms ease-in-out',
-                shrink: 'shrink 2s ease-in-out'
-
+                grow: 'grow 400ms ease-in forwards',
+                shrink: 'shrink 2s ease-in-out',
             },
             boxShadow: {
                 'rating-button': '0px 4px 0px #BDABE3',
@@ -140,7 +142,7 @@ module.exports = {
             ringColor: ['checked'],
             ringOpacity: ['checked'],
             padding: ['checked', 'active'],
-            transitionProperty: ['focus', 'responsive', 'motion-safe', 'motion-reduce']
+            transitionProperty: ['focus', 'responsive', 'motion-safe', 'motion-reduce'],
         }
 
     },

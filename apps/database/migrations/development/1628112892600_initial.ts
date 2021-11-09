@@ -33,12 +33,13 @@ export async function up(pgm: MigrationBuilder): Promise<void> {
     // users
     pgm.createTable('users', {
         id: 'id',
-        email: { type: 'varchar(1000)', notNull: true, unique: true },
+        email: { type: 'citext', notNull: true, unique: true },
         password: { type: 'varchar(1000)', notNull: false }, // guests can have null passwords
         roles: { type: 'user_role[]', notNull: true }, // custom type
-        question_deck_credits: { type: 'smallint', notNull: true, default: 0 },
+        question_deck_credits: { type: 'smallint', notNull: true, default: 1 },
         test_account: { type: 'boolean', notNull: true, default: false },
         notifications: { type: 'boolean', notNull: true, default: false },
+        domain: { type: 'varchar(1000)', notNull: true },
         created_at: {
             type: 'timestamptz',
             notNull: true,
@@ -64,7 +65,7 @@ export async function up(pgm: MigrationBuilder): Promise<void> {
         status: { type: 'deck_status', notNull: true }, // custom type
         description: { type: 'text', notNull: true },
         purchase_price: { type: 'money', notNull: true },
-        example_question: { type: 'text', notNull: false },
+        sample_question: { type: 'text', notNull: false },
         thumbnail_url: { type: 'varchar(1000)', notNull: false },
         created_at: {
             type: 'timestamptz',
@@ -94,6 +95,7 @@ export async function up(pgm: MigrationBuilder): Promise<void> {
         host_player_name: { type: 'varchar(200)', notNull: false },
         host_id: { type: 'integer', notNull: false, references: 'users', onDelete: 'SET NULL' },
         end_date: { type: 'timestamptz', notNull: false },
+        domain: { type: 'varchar(1000)' },
         created_at: {
             type: 'timestamptz',
             notNull: true,
@@ -109,6 +111,7 @@ export async function up(pgm: MigrationBuilder): Promise<void> {
     // questions
     pgm.createTable('questions', {
         id: 'id',
+        category: { type: 'varchar(1000)', notNull: true },
         text: { type: 'text', notNull: true },
         text_for_guess: { type: 'text', notNull: true },
         follow_up: { type: 'text', notNull: true },
@@ -157,6 +160,22 @@ export async function up(pgm: MigrationBuilder): Promise<void> {
         question_id: { type: 'integer', notNull: true, references: 'questions', onDelete: 'CASCADE' },
         user_id: { type: 'integer', notNull: false, references: 'users', onDelete: 'SET NULL' },
         rating: { type: 'user_rating', notNull: true }
+    })
+
+    // user_app_rating
+    pgm.createTable('user_app_ratings', {
+        id: 'id',
+        user_id: { type: 'integer', notNull: false, references: 'users', onDelete: 'SET NULL', unique: true },
+        rating: { type: 'user_rating', notNull: true }
+    })
+
+    // free credit signups are created when a user enters their email at the end of the
+    // game to request credits
+    pgm.createTable('free_credit_signups', {
+        id: 'id',
+        email: { type: 'varchar(1000)', notNull: true, unique: true },
+        has_been_claimed: { type: 'boolean', notNull: true, default: false },
+        claimed_on: { type: 'timestamptz', notNull: false }
     })
 
     // game_questions
@@ -453,11 +472,19 @@ export async function up(pgm: MigrationBuilder): Promise<void> {
         function: 'update_updated_at_column',
     })
 
+    pgm.createTrigger('free_credit_signups', 'update_updated_at_trigger', {
+        when: 'BEFORE',
+        operation: 'UPDATE',
+        level: 'ROW',
+        function: 'update_updated_at_column',
+    })
+
     /**
     * ======================================
     * INDEXES
     * ======================================
     */
+    pgm.createIndex('user_question_ratings', ['user_id', 'question_id'], { unique: true });
     pgm.createIndex('game_questions', ['game_id', 'question_sequence_index'], { unique: true });
     pgm.createIndex('game_players', ['game_id', 'player_name'], { unique: true });
     pgm.createIndex('game_answers', ['game_player_id', 'game_question_id'], { unique: true }) // prevent more than 1 answer by same player for same question

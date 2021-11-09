@@ -3,8 +3,8 @@ import { TEST_DB_CONNECTION } from '@whosaidtrue/util';
 import { cleanDb } from '../util/cleanDb';
 import { Email } from "@whosaidtrue/app-interfaces";
 import Emails from "./emails.dao";
-import { Users } from "@whosaidtrue/data";
 import _ from "lodash";
+import Users from "../users/Users.dao";
 
 
 describe('Emails', () => {
@@ -77,7 +77,7 @@ describe('Emails', () => {
 
         it('should require user_id', async () => {
             try {
-                await emails.insertOne({ user_id: null, to: 'to', text: 'text' });
+                await emails.insertOne({ user_id: null, to: 'to', text: 'text', subject: 'subject' });
                 fail();
             } catch (e) {
                 expect(e).toEqual(new DatabaseError('null value in column "user_id" violates not-null constraint', 1, 'error'))
@@ -86,7 +86,7 @@ describe('Emails', () => {
 
         it('should require to address', async () => {
             try {
-                await emails.insertOne({ user_id: userId, to: null, text: 'text' });
+                await emails.insertOne({ user_id: userId, to: null, text: 'text', subject: 'subject' });
                 fail()
             } catch (e) {
                 expect(e).toEqual(new DatabaseError('null value in column "to" violates not-null constraint', 1, 'error'))

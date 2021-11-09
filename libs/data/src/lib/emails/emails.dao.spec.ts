@@ -22,7 +22,7 @@ describe('Emails', () => {
 
     beforeEach(async () => {
         await cleanDb(pool);
-        userId = (await users.register('email', 'password', 'test.com')).rows[0].id;
+        userId = (await users.register('email', 'password', 'www.test.com')).rows[0].id;
         await emails.pool.query(`INSERT INTO email_templates (key, sendgrid_template_id) VALUES ('template_key', 'sendgrid_template_id')`);
     });
 
@@ -95,15 +95,15 @@ describe('Emails', () => {
 
         it('should require email body', async () => {
             try {
-                await emails.insertOne({ user_id: userId, to: 'to', text: null });
+                await emails.insertOne({ user_id: userId, to: 'to', text: null, subject: 'subject' });
                 fail()
             } catch (e) {
                 expect(e).toEqual(new DatabaseError('new row for relation "emails" violates check constraint "email_text_html_or_template_required"', 1, 'error'))
             }
 
             // any one of text, html or template_key should work
-            await emails.insertOne({ user_id: userId, to: 'to', text: 'text' });
-            await emails.insertOne({ user_id: userId, to: 'to', html: 'html' });
+            await emails.insertOne({ user_id: userId, to: 'to', text: 'text', subject: 'subject' });
+            await emails.insertOne({ user_id: userId, to: 'to', html: 'html', subject: 'subject' });
             await emails.insertOne({ user_id: userId, to: 'to', template_key: 'template_key' });
         });
 

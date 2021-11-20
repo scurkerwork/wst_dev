@@ -2,6 +2,9 @@
   "name": "whosaidtrue",
   "version": "0.0.0",
   "license": "none",
+  "sideEffects": [
+    "*.css"
+  ],
   "scripts": {
     "nx": "nx",
     "start": "nx serve",

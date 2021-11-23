@@ -213,10 +213,10 @@ const ChooseName: React.FC = () => {
                     <Title3 >OR</Title3>
                     <Divider dividerColor='grey' />
                 </div>
-                <form className="flex flex-col sm:flex-row gap-3 items-center">
+                <div className="flex flex-col sm:flex-row gap-3 items-center">
                     <TextInput $border type="text" className="font-semibold text-xl inline w-1/3" onChange={changeHandler} placeholder="Create your own" />
                     <Button className="w-2/3 inline" buttonStyle="big-text" onClick={clickHandler} $secondary>Submit</Button>
-                </form>
+                </div>
             </div>
         </Box>
     )

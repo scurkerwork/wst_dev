@@ -1,10 +1,10 @@
 import { useEffect } from 'react';
-import { useAppSelector, useAppDispatch } from '../../../app/hooks';
-import { isLoggedIn, selectDeckCredits, selectIsGuest, logout } from '../../auth/authSlice';
+import { useAppSelector, useAppDispatch } from '../../app/hooks';
+import { isLoggedIn, selectDeckCredits, selectIsGuest, logout } from '../auth/authSlice';
 import { DeckDetails, Title1, Headline, ModalContent } from '@whosaidtrue/ui';
-import { getSelectedDeck, selectIsOwned } from '../../decks/deckSlice';
-import { fetchDetails } from '../../auth/authSlice';
-import { setFullModal } from '../../modal/modalSlice';
+import { getSelectedDeck, selectIsOwned } from './deckSlice';
+import { fetchDetails } from '../auth/authSlice';
+import { setFullModal } from '../modal/modalSlice';
 import DeckDetailsButton from './DeckDetailsButton';
 
 const DeckDetailsModal: React.FC = () => {
@@ -40,7 +40,7 @@ const DeckDetailsModal: React.FC = () => {
             <Title1 className="text-center mb-6 mt-2">{deck.name}</Title1>
             <DeckDetails {...deck}></DeckDetails>
 
-            <div className="w-full sm:w-2/3">
+            <div className="w-2/3">
                 <DeckDetailsButton deck={deck} isOwned={isOwned} />
             </div>
 

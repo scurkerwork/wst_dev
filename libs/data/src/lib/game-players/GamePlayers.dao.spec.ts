@@ -76,6 +76,7 @@ describe('GamePlayers', () => {
             }
         })
 
+
         it('should succeed if same name, different game', async () => {
             // create a second game
             const access_code = '123456'
@@ -91,7 +92,6 @@ describe('GamePlayers', () => {
             const { rows } = await players.insertOne({ ...player, game_id });
             expect(rows[0].id).not.toEqual(result1.rows[0].id);
         })
-
     })
 
     describe('setStatus', () => {

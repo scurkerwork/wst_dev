@@ -4,7 +4,7 @@ import { isLoggedIn, selectDeckCredits, selectIsGuest, logout } from '../auth/au
 import { DeckDetails, Title1, Headline, ModalContent } from '@whosaidtrue/ui';
 import { getSelectedDeck, selectIsOwned } from './deckSlice';
 import { fetchDetails } from '../auth/authSlice';
-import { setFullModal } from '../modal/modalSlice';
+import { setFullModal, setCameFromDeckDetails } from '../modal/modalSlice';
 import DeckDetailsButton from './DeckDetailsButton';
 
 const DeckDetailsModal: React.FC = () => {
@@ -32,6 +32,8 @@ const DeckDetailsModal: React.FC = () => {
     }, [loggedIn, dispatch, isGuest, deck])
 
     const loginClick = () => {
+        // Makes it so that user gets sent back to this modal after login
+        dispatch(setCameFromDeckDetails(true));
         dispatch(setFullModal('login'))
     }
 

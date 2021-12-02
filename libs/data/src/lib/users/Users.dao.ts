@@ -194,7 +194,14 @@ class Users extends Dao {
      */
     public upsertResetCode(email: string, code: string): Promise<QueryResult> {
         const query = {
-            text: 'SELECT * FROM upsert_reset_code($1, $2)',
+            text: `
+                INSERT INTO reset_codes (code, user_email, user_id)
+                SELECT crypt($2, gen_salt('bf', 4)), users.email, users.id
+                FROM users
+                WHERE users.email = $1
+                ON CONFLICT (user_email)
+                DO UPDATE SET code = crypt($2, gen_salt('bf', 4))
+                RETURNING reset_codes.user_email`,
             values: [email, code]
         };
         return this._pool.query(query)
@@ -263,7 +270,7 @@ class Users extends Dao {
      */
     public async createGuest(email: string, domain: string): Promise<QueryResult> {
         const query = {
-            text: 'INSERT INTO users (email, roles, domain) VALUES ( $1, $2, $3) RETURNING id, email, array_to_json(roles) AS roles',
+            text: 'INSERT INTO users (email, roles, domain) VALUES ($1, $2, $3) RETURNING id, email, array_to_json(roles) AS roles',
             values: [email, ['guest'], domain]
         }
         try {

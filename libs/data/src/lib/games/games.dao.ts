@@ -1,5 +1,5 @@
 import { Pool, QueryResult } from 'pg';
-import { logger, logError } from '@whosaidtrue/logger';
+import { logger } from '@whosaidtrue/logger';
 import { getAndUpdateQuery, } from '../game-questions/GameQuestions.dao';
 import { getQuestionData } from '../questions/Questions.dao';
 import { Deck, GameStatus, InsertGame, JoinGameResult, StartGameResult } from '@whosaidtrue/app-interfaces';
@@ -100,8 +100,8 @@ class Games extends Dao {
                         SELECT * FROM active_questions WHERE deck_id = $2 ORDER BY random()
                     ),
                     new_game AS ( --create new game
-                        INSERT INTO games (access_code, status, deck_id, host_id, domain)
-                        VALUES (UPPER($4), 'lobby', $2, $1, $3)
+                        INSERT INTO games (access_code, access_code_ref, status, deck_id, host_id, domain)
+                        VALUES (UPPER($4), UPPER($4), 'lobby', $2, $1, $3)
                         RETURNING games.id, games.access_code
                     ), ins AS (
                         INSERT INTO game_questions (game_id, question_id)
@@ -342,15 +342,18 @@ class Games extends Dao {
 
     /**
      * Set game status to finished, and end time to now.
+     *
+     * Also sets access_code_ref to the old value of the access_code
      * @param gameId
      * @returns
      */
-    public endGame(gameId: number): Promise<QueryResult> {
+    public async endGame(gameId: number): Promise<QueryResult> {
+
         const query = {
             text: `
-            UPDATE games
-            SET end_date = $1, status = 'finished', access_code = NULL
-            WHERE id = $2`,
+                UPDATE games
+                SET end_date = $1, status = 'finished', access_code = NULL
+                WHERE id = $2`,
             values: [new Date().toISOString(), gameId]
         }
 
@@ -366,10 +369,10 @@ class Games extends Dao {
     public endGameIfHost(gameId: number, userId: number): Promise<QueryResult> {
         const query = {
             text: `
-            UPDATE games
-            SET end_date = $1, status = 'finished'
-            WHERE id = $2
-            AND host_id = $3`,
+                UPDATE games
+                SET end_date = $1, status = 'finished'
+                WHERE id = $2
+                AND host_id = $3`,
             values: [new Date().toISOString(), gameId, userId]
         }
 

@@ -66,7 +66,7 @@ const App: React.FC = () => {
           <Route exact path='/create-account' >
             <CreateAccount />
           </Route>
-          <Route path='/x/:access_code'>
+          <Route path='/game/:access_code'>
             <ChooseName />
           </Route>
           <Route path='/play'>

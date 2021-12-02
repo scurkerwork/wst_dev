@@ -78,6 +78,16 @@ describe('Users', () => {
 
         })
 
+        it('should successfully change the password and allow login if email differs only in casing', async () => {
+            const newPass = 'newPassword';
+            const { rows } = await users.changePassword(userId, password, newPass)
+            const actual = await users.login(email.toUpperCase(), newPass)
+
+            expect(rows[0].id).toEqual(userId)
+            expect(actual.rows.length).toEqual(1)
+            expect(actual.rows[0].email).toEqual(email)
+        })
+
         it('should encrypt the new password with bf8', async () => {
             await users.changePassword(userId, password, 'newPassword')
             const { rows } = await users.getById(userId)
@@ -135,6 +145,15 @@ describe('Users', () => {
             expect(rows[0].roles.length).toEqual(1)
             expect(rows[0].roles[0]).toEqual('user')
         })
+
+        it('should return user data if password is correct and email differs only in casing', async () => {
+            const { rows } = await users.login(email.toUpperCase(), password);
+            expect(rows[0].id).toBeDefined();
+            expect(rows[0].email).toEqual(email);
+            expect(rows[0].roles.length).toEqual(1)
+            expect(rows[0].roles[0]).toEqual('user')
+        })
+
 
         it('should return empty rows if password is incorrect', async () => {
             const { rows } = await users.login(email, 'wrong');
@@ -196,6 +215,17 @@ describe('Users', () => {
             }
         })
 
+        it('should throw duplicate key error if user already exists with email that differs only in casing, and has password', async () => {
+            await users.register('test@test.com', 'abcd', 'www.test.com'); // register user
+            try {
+                // try to duplicate
+                await users.createGuest('test@test.com'.toUpperCase(), 'www.test.com')
+            } catch (e) {
+                expect(e).toEqual(new DatabaseError("duplicate key value violates unique constraint \"users_email_key\"", 1, "error"))
+            }
+        })
+
+
         it('should return the user if user already exists but has no password set', async () => {
 
             await users.createGuest('test@test.com', 'www.test.com')
@@ -220,7 +250,7 @@ describe('Users', () => {
 
         it('should create a new reset code and return the email address', async () => {
             const { rows } = await users.upsertResetCode(userEmail, '1234');
-            expect(rows[0].email).toEqual(userEmail)
+            expect(rows[0].user_email).toEqual(userEmail)
         })
 
         it('should update and not insert if user already has a code', async () => {
@@ -229,7 +259,7 @@ describe('Users', () => {
             const { rows } = await users.upsertResetCode(userEmail, '1235'); // upsert again
             const secondTotal = await pool.query('SELECT * FROM reset_codes'); // get all codes after second upsert
 
-            expect(rows[0].email).toEqual(userEmail) // got email back
+            expect(rows[0].user_email).toEqual(userEmail) // got email back
             expect(secondTotal.rows.length).toEqual(1) // it didn't insert a second one
             expect(secondTotal.rows[0].code).not.toEqual(firstTotal.rows[0].code) // it correctly updated the first one
 
@@ -306,6 +336,14 @@ describe('Users', () => {
 
             expect(actual.roles.includes('guest')).toBe(false);
             expect(actual.roles.includes('user')).toBe(true);
+
+        })
+
+        it('should not be case sensitive', async () => {
+            const user = await users.resetPassword(userEmail.toUpperCase(), 'password12345');
+            expect(user.id).toBeDefined();
+            expect(user.email).toEqual(userEmail)
+            expect(user.roles[0]).toEqual('user')
 
         })
 

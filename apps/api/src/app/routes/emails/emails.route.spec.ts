@@ -24,10 +24,11 @@ describe('emails route', () => {
 
     describe('POST /', () => {
 
-        it('should return 201 if all required data is present', done => {
+        it('should return 201 if all required data is present', (done) => {
 
             supertest(app)
                 .post('/emails')
+                .set('origin', 'www.test.com')
                 .send({
                     email: 'test@test.com',
                     category: 'BUG REPORT',
@@ -55,8 +56,7 @@ describe('emails route', () => {
             expect(mockedEmails.enqueue).toHaveBeenCalledWith({
                 user_id: 1,
                 to: process.env.EMAIL_RECIPIENT,
-                cc: 'test@test.com',
-                subject: `[BUG REPORT] - Sent by test from www.test.com`,
+                subject: `[BUG REPORT] - Sent by test - test@test.com from www.test.com`,
                 text: 'this is a test'
             })
         })
@@ -78,8 +78,7 @@ describe('emails route', () => {
             expect(mockedEmails.enqueue).toHaveBeenCalledWith({
                 user_id: undefined,
                 to: process.env.EMAIL_RECIPIENT,
-                cc: 'test@test.com',
-                subject: `[BUG REPORT] - Sent by test from www.test.com`,
+                subject: `[BUG REPORT] - Sent by test - test@test.com from www.test.com`,
                 text: 'this is a test'
             })
         })
@@ -229,8 +228,7 @@ describe('emails route', () => {
             expect(mockedEmails.enqueue).toHaveBeenCalledWith({
                 user_id: undefined,
                 to: process.env.EMAIL_RECIPIENT,
-                cc: 'test@test.com',
-                subject: `[BUG REPORT] - Sent by test from www.test.com`,
+                subject: `[BUG REPORT] - Sent by test - test@test.com from www.test.com`,
                 text: 'this is a test&lt;script&gt;alert(&quot;you have been hacked&quot;);&lt;&#x2F;script&gt;'
             })
         })
@@ -252,8 +250,7 @@ describe('emails route', () => {
             expect(mockedEmails.enqueue).toHaveBeenCalledWith({
                 user_id: undefined,
                 to: process.env.EMAIL_RECIPIENT,
-                cc: 'test@test.com',
-                subject: `[BUG REPORT] - Sent by test&lt;script&gt;alert(&quot;you have been hacked&quot;);&lt;&#x2F;script&gt; from www.test.com`,
+                subject: `[BUG REPORT] - Sent by test&lt;script&gt;alert(&quot;you have been hacked&quot;);&lt;&#x2F;script&gt; - test@test.com from www.test.com`,
                 text: 'this is a test'
             })
         })
@@ -279,8 +276,7 @@ describe('emails route', () => {
             expect(mockedEmails.enqueue).toHaveBeenCalledWith({
                 user_id: undefined,
                 to: process.env.EMAIL_RECIPIENT,
-                cc: 'test@test.com',
-                subject: `[BUG REPORT&lt;script&gt;alert(&quot;you have been hacked&quot;);&lt;&#x2F;script&gt;] - Sent by test from www.test.com`,
+                subject: `[BUG REPORT&lt;script&gt;alert(&quot;you have been hacked&quot;);&lt;&#x2F;script&gt;] - Sent by test - test@test.com from www.test.com`,
                 text: 'this is a test'
             })
         })

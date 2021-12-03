@@ -24,7 +24,6 @@ const OneLiners: React.FC = () => {
   ) : (
     <div className="my-12 w-32 h-32 mx-auto">
       <Spinner />
-      Hahahah
     </div>
   );
 };

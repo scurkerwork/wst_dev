@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { Helmet } from 'react-helmet-async';
 import { useHistory } from 'react-router';
 import { useAppSelector, useAppDispatch } from '../../app/hooks';
 import {
@@ -90,9 +91,16 @@ const Play: React.FC = () => {
 
     return (
         <>
-            {playerStatus === "lobby" && gameStatus !== 'postGame' && <Lobby />}
-            {playerStatus === 'inGame' && gameStatus === 'inProgress' && <Question />}
-            {gameStatus === 'postGame' && <FinalResults />}
+            <Helmet>
+              <title>Who Said True?!</title>
+            </Helmet>
+            {/* TODO: replace this mt-20 fix with something better to allow for a shorter gap between nav and game play components */}
+            {/* REF: https://trello.com/c/nNigCUJb/254-101-gameplay-153-ui-ux-shorten-the-top-purple-border */}
+            <div className="mt-20">
+              {playerStatus === "lobby" && gameStatus !== 'postGame' && <Lobby />}
+              {playerStatus === 'inGame' && gameStatus === 'inProgress' && <Question />}
+              {gameStatus === 'postGame' && <FinalResults />}
+            </div>
             {isHost && gameStatus !== 'postGame' && screen !== 'guess' && <HostActions />}
         </>
     )

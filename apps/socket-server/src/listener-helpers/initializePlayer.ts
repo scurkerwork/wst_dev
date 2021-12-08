@@ -12,15 +12,11 @@ const initializePlayer = async (socket: Socket) => {
   // change player status in DB
   await gamePlayers.setStatus(socket.playerId, 'connected');
 
-  const isPlayerRecentlyDisconnected = await pubClient.get(
+  const deletedKeyCount = await pubClient.del(
     Keys.recentlyDisconnected(socket.gameId, socket.playerId)
   );
 
-  if (isPlayerRecentlyDisconnected) {
-    await pubClient.del(
-      Keys.recentlyDisconnected(socket.gameId, socket.playerId)
-    );
-  } else {
+  if (deletedKeyCount === 0) {
     // add player to redis
     await pubClient
       .pipeline()

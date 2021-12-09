@@ -49,6 +49,10 @@ export class Keys {
     return `gameQuestions:${questionId}:totalTrue`;
   }
 
+  static oneLiners(gameId: number) {
+    return `games:${gameId}:oneLiners`;
+  }
+
   static recentlyDisconnected(gameId: number, playerId: number) {
     return `gameRecentlyDisconnected:${gameId}:${playerId}`;
   }

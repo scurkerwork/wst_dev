@@ -20,6 +20,9 @@ import playerLeft from './listener-helpers/playerLeft';
 import endGame from './listener-helpers/endGame';
 import sendFunFacts from './listener-helpers/sendFunFacts';
 import removePlayer from './listener-helpers/removePlayer';
+import sendOneLiners from './listener-helpers/sendOneLiners';
+
+const registerListeners = (socket: Socket, io: Server) => {
 import Keys from './keys';
 import sendPlayerList from './listener-helpers/sendPlayerList';
 
@@ -28,6 +31,111 @@ const handleDisconnect = async (socket: Socket, reason: string) => {
     currentPlayers,
     currentQuestionId,
     currentSequenceIndex,
+    totalQuestions,
+    gameStatus,
+    bucketList,
+    groupVworld,
+    playerMostSimilar,
+    locks,
+  } = socket.keys;
+
+  // source info
+  const source = {
+    playerId: socket.playerId,
+    playerName: socket.playerName,
+    gameId: socket.gameId,
+  };
+
+  /**
+   * DISCONNECT
+   */
+  socket.on('disconnect', async (reason) => {
+    logger.debug({
+      message: '[disconnect] Player disconnected',
+      playerId: socket.playerId,
+      playerName: socket.playerName,
+      isHost: socket.isHost,
+      reason, // "client namespace disconnect" = intentional, e.g. player leaves game
+    });
+
+    const [, numPlayers, status] = await pubClient
+      .pipeline()
+      .srem(currentPlayers, playerValueString(socket))
+      .scard(currentPlayers)
+      .get(gameStatus)
+      .exec();
+
+    if (!numPlayers[1] && status[1] !== 'finished') {
+      // transport close happens if user refreshes page, or their connection dies.
+      if (reason !== 'transport close') {
+        logger.debug({
+          message: '[disconnect] last player disconnected. Ending game.',
+        });
+        await games.endGame(socket.gameId);
+        await pubClient.set(gameStatus, 'finished', 'EX', ONE_DAY);
+      }
+
+      // host left on purpose
+    } else if (
+      socket.isHost &&
+      reason === 'client namespace disconnect' &&
+      status[1] !== 'finished' &&
+      status[1] !== 'postGame'
+    ) {
+      // set host status in DB
+      await gamePlayers.setStatus(socket.playerId, 'left');
+
+      const [questionId, idx] = await pubClient
+        .pipeline()
+        .get(currentQuestionId)
+        .get(currentSequenceIndex)
+        .set(gameStatus, 'postGame', 'EX', ONE_DAY)
+        .exec();
+
+      if (idx[1] > 1) {
+        // calculate scores
+        const result = await saveScores(Number(questionId[1]), socket.gameId);
+
+        logger.debug({
+          message: '[HostDisconnect] Score calculation results',
+          ...result,
+        });
+
+        // end game
+        sendToOthers(types.GAME_END, result as payloads.QuestionEnd);
+        sendToOthers(types.HOST_LEFT);
+      } else {
+        logger.debug({
+          message: '[HostDisconnect] Host left before first question',
+        });
+
+        // set host status in DB
+        await gamePlayers.setStatus(socket.playerId, 'left');
+
+        sendToOthers(types.HOST_LEFT_NO_RESULTS); // host left before first question was over. No need to save
+      }
+    } else if (!socket.isHost && reason === 'client namespace disconnect') {
+      const isRemoved = await pubClient.sismember(
+        socket.keys.removedPlayers,
+        `${socket.playerId}`
+      );
+
+      if (!isRemoved) {
+        // if the game is over, don't need to do anything
+        if (status[1] === 'postGame' || status[1] === 'finished') return;
+        else {
+          // set player status in DB
+          await gamePlayers.setStatus(socket.playerId, 'left');
+          await playerLeft(socket, {
+            id: socket.playerId,
+            player_name: socket.playerName,
+          });
+          sendToOthers(types.PLAYER_LEFT_GAME, {
+            id: socket.playerId,
+            player_name: socket.playerName,
+          } as PlayerRef);
+        }
+      }
     gameStatus,
   } = socket.keys;
 
@@ -198,6 +306,10 @@ const registerListeners = (socket: Socket, io: Server) => {
    */
   socket.on(types.PLAYER_JOINED_GAME, (msg: payloads.PlayerEvent) => {
     sendToOthers(types.PLAYER_JOINED_GAME, msg);
+  });
+
+  socket.on(types.ONE_LINERS, async (msg: any) => {
+    sendOneLiners(socket);
   });
 
   /**

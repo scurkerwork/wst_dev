@@ -61,6 +61,22 @@ const initializePlayer = async (socket: Socket) => {
     .expire(playersKey, ONE_DAY)
     .exec();
 
+  // change player status in DB
+  await gamePlayers.setStatus(socket.playerId, 'connected');
+
+  const deletedKeyCount = await pubClient.del(
+    Keys.recentlyDisconnected(socket.gameId, socket.playerId)
+  );
+
+  if (deletedKeyCount === 0) {
+    // add player to redis
+    await pubClient
+      .pipeline()
+      .sadd(playersKey, playerValueString(socket))
+      .expire(playersKey, ONE_DAY)
+      .exec();
+  }
+
   // send list of current players back to connecting client
   sendPlayerList(socket);
 };

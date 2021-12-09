@@ -23,6 +23,10 @@ import removePlayer from './listener-helpers/removePlayer';
 import sendOneLiners from './listener-helpers/sendOneLiners';
 
 const registerListeners = (socket: Socket, io: Server) => {
+import Keys from './keys';
+import sendPlayerList from './listener-helpers/sendPlayerList';
+
+const handleDisconnect = async (socket: Socket, reason: string) => {
   const {
     currentPlayers,
     currentQuestionId,
@@ -132,6 +136,143 @@ const registerListeners = (socket: Socket, io: Server) => {
           } as PlayerRef);
         }
       }
+    gameStatus,
+  } = socket.keys;
+
+  const isPlayerRecentlyDisconnected = await pubClient.get(
+    Keys.recentlyDisconnected(socket.gameId, socket.playerId)
+  );
+
+  if (!isPlayerRecentlyDisconnected) return;
+
+  const [, numPlayers, status] = await pubClient
+    .pipeline()
+    .srem(currentPlayers, playerValueString(socket))
+    .scard(currentPlayers)
+    .get(gameStatus)
+    .exec();
+
+  sendPlayerList(socket);
+
+  if (!numPlayers[1] && status[1] !== 'finished') {
+    // transport close happens if user refreshes page, or their connection dies.
+    if (reason !== 'transport close') {
+      logger.debug({
+        message: '[disconnect] last player disconnected. Ending game.',
+      });
+      await games.endGame(socket.gameId);
+      await pubClient.set(gameStatus, 'finished', 'EX', ONE_DAY);
+    }
+
+    // host left on purpose
+  } else if (
+    socket.isHost &&
+    reason === 'client namespace disconnect' &&
+    status[1] !== 'finished' &&
+    status[1] !== 'postGame'
+  ) {
+    // set host status in DB
+    await gamePlayers.setStatus(socket.playerId, 'left');
+
+    const [questionId, idx] = await pubClient
+      .pipeline()
+      .get(currentQuestionId)
+      .get(currentSequenceIndex)
+      .set(gameStatus, 'postGame', 'EX', ONE_DAY)
+      .exec();
+
+    console.log(questionId, idx);
+
+    if (idx[1] > 1) {
+      // calculate scores
+      const result = await saveScores(Number(questionId[1]), socket.gameId);
+
+      logger.debug({
+        message: '[HostDisconnect] Score calculation results',
+        ...result,
+      });
+
+      // end game
+      socket.sendToOthers(types.GAME_END, result as payloads.QuestionEnd);
+      socket.sendToOthers(types.HOST_LEFT);
+    } else {
+      logger.debug({
+        message: '[HostDisconnect] Host left before first question',
+      });
+
+      // set host status in DB
+      await gamePlayers.setStatus(socket.playerId, 'left');
+
+      socket.sendToOthers(types.HOST_LEFT_NO_RESULTS); // host left before first question was over. No need to save
+    }
+  } else if (!socket.isHost && reason === 'client namespace disconnect') {
+    const isRemoved = await pubClient.sismember(
+      socket.keys.removedPlayers,
+      `${socket.playerId}`
+    );
+
+    if (!isRemoved) {
+      // if the game is over, don't need to do anything
+      if (status[1] === 'postGame' || status[1] === 'finished') return;
+      else {
+        // set player status in DB
+        await gamePlayers.setStatus(socket.playerId, 'left');
+        await playerLeft(socket, {
+          id: socket.playerId,
+          player_name: socket.playerName,
+        });
+        socket.sendToOthers(types.PLAYER_LEFT_GAME, {
+          id: socket.playerId,
+          player_name: socket.playerName,
+        } as PlayerRef);
+      }
+    }
+  }
+};
+
+const registerListeners = (socket: Socket, io: Server) => {
+  const {
+    currentSequenceIndex,
+    totalQuestions,
+    gameStatus,
+    bucketList,
+    groupVworld,
+    playerMostSimilar,
+    locks,
+  } = socket.keys;
+
+  // source info
+  const source = {
+    playerId: socket.playerId,
+    playerName: socket.playerName,
+    gameId: socket.gameId,
+  };
+
+  /**
+   * DISCONNECT
+   */
+  socket.on('disconnect', async (reason) => {
+    logger.debug({
+      message: '[disconnect] Player disconnected',
+      playerId: socket.playerId,
+      playerName: socket.playerName,
+      isHost: socket.isHost,
+      reason, // "client namespace disconnect" = intentional, e.g. player leaves game
+    });
+
+    await pubClient.set(
+      Keys.recentlyDisconnected(socket.gameId, socket.playerId),
+      'true',
+      'EX',
+      ONE_DAY
+    );
+
+    if (reason !== 'transport close') {
+      handleDisconnect(socket, reason);
+    } else {
+      setTimeout(() => {
+        handleDisconnect(socket, reason);
+      }, 30000);
     }
   });
 
@@ -145,6 +286,7 @@ const registerListeners = (socket: Socket, io: Server) => {
 
     logOutgoing(type, payload, 'others', source);
   };
+
   socket.sendToOthers = sendToOthers;
 
   // send to connected clients including sender

@@ -17,23 +17,23 @@ describe('one-liners route', () => {
 
     describe('[GET] /', () => {
 
-        it('should returnmixed clean and dirty decks if request origin = whosaidtrue', async () => {
+        it('should returnmixed clean and dirty decks if request origin = DOMAIN', async () => {
             mockedOneLiners.getSelection.mockResolvedValue({ rows: [{ text: 'test', clean: false }] } as QueryResult);
 
             await supertest(app)
                 .get('/one-liners')
-                .set('origin', 'https://www.whosaidtrue.com')
+                .set('origin', process.env.DOMAIN)
                 .expect(200)
 
             expect(mockedOneLiners.getSelection).toHaveBeenCalledWith(false);
         })
 
-        it('should return clean decks if request origin = whosaidtrueforschools', async () => {
+        it('should return clean decks if request origin = FOR_SCHOOLS_DOMAIN', async () => {
             mockedOneLiners.getSelection.mockResolvedValue({ rows: [{ text: 'test', clean: true }] } as QueryResult);
 
             await supertest(app)
                 .get('/one-liners')
-                .set('origin', 'https://www.whosaidtrueforschools.com')
+                .set('origin', process.env.FOR_SCHOOLS_DOMAIN)
                 .expect(200)
 
             expect(mockedOneLiners.getSelection).toHaveBeenCalledWith(true);
@@ -44,7 +44,7 @@ describe('one-liners route', () => {
 
             const { body } = await supertest(app)
                 .get('/one-liners')
-                .set('origin', 'https://www.whosaidtrueforschools.com')
+                .set('origin', process.env.FOR_SCHOOLS_DOMAIN)
                 .expect(200)
 
             expect(body.oneLiners[0].text).toEqual('test\n')
@@ -55,7 +55,7 @@ describe('one-liners route', () => {
 
             const { body } = await supertest(app)
                 .get('/one-liners')
-                .set('origin', 'https://www.whosaidtrueforschools.com')
+                .set('origin', process.env.FOR_SCHOOLS_DOMAIN)
                 .expect(200)
 
             expect(body.oneLiners[0].text).toEqual('test\n')
@@ -66,7 +66,7 @@ describe('one-liners route', () => {
 
             const { body } = await supertest(app)
                 .get('/one-liners')
-                .set('origin', 'https://www.whosaidtrueforschools.com')
+                .set('origin', process.env.FOR_SCHOOLS_DOMAIN)
                 .expect(200)
 
             expect(body.oneLiners[0].text).toEqual('test\n')

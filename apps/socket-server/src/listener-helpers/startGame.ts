@@ -1,88 +1,79 @@
-import { Socket } from 'socket.io';
+import { Socket } from "socket.io";
 import { logger } from '@whosaidtrue/logger';
-import { games, oneLiners } from '../db';
+import { games } from '../db';
 import { Keys } from '../keys';
-import { pubClient } from '../redis';
-import { ONE_DAY } from '../constants';
-import { PlayerRef } from '@whosaidtrue/app-interfaces';
+import { pubClient } from "../redis";
+import { ONE_DAY } from "../constants";
+import { PlayerRef } from "@whosaidtrue/app-interfaces";
 
 const startGame = async (socket: Socket) => {
-  const { gameId } = socket;
-  const {
-    currentPlayers,
-    readerList,
-    currentQuestion,
-    currentQuestionId,
-    currentSequenceIndex,
-    gameStatus,
-  } = socket.keys;
 
-  // DEV_NOTE: can't pipeline these because send_command doesn't work on pipeline
-  // in ioredis :(
+    const { gameId } = socket
+    const {
+        currentPlayers,
+        readerList,
+        currentQuestion,
+        currentQuestionId,
+        currentSequenceIndex,
+        gameStatus
+    } = socket.keys;
 
-  // count currently connected players
-  const currentCount = await pubClient.scard(currentPlayers);
+    // DEV_NOTE: can't pipeline these because send_command doesn't work on pipeline
+    // in ioredis :(
 
-  // set readers list from players list
-  await pubClient.sunionstore(readerList, currentPlayers);
-  await pubClient.expire(readerList, ONE_DAY);
+    // count currently connected players
+    const currentCount = await pubClient.scard(currentPlayers);
 
-  // pop a reader from the list to assign them as the first reader
-  const readerString = await pubClient.spop(readerList);
-  const reader = JSON.parse(readerString) as PlayerRef;
+    // set readers list from players list
+    await pubClient.sunionstore(readerList, currentPlayers);
+    await pubClient.expire(readerList, ONE_DAY);
 
-  // set start time
-  const startDate = new Date();
+    // pop a reader from the list to assign them as the first reader
+    const readerString = await pubClient.spop(readerList);
+    const reader = JSON.parse(readerString) as PlayerRef;
 
-  // update game and question, fetch question text
-  const gameStartResult = await games.start(
-    gameId,
-    currentCount,
-    reader.id,
-    reader.player_name,
-    startDate
-  );
-  const { game, question } = gameStartResult;
-  const notAnsweredKey = Keys.haveNotAnswered(question.gameQuestionId);
+    // set start time
+    const startDate = new Date();
 
-  // update game status
-  const [, , , , , notAnsweredStrings] = await pubClient
-    .pipeline()
-    .set(gameStatus, game.status, 'EX', ONE_DAY)
-    .set(
-      Keys.totalPlayers(question.gameQuestionId),
-      currentCount,
-      'EX',
-      ONE_DAY
+    // update game and question, fetch question text
+    const gameStartResult = await games.start(
+        gameId,
+        currentCount,
+        reader.id,
+        reader.player_name,
+        startDate
     )
-    .set(
-      `gameQuestions:${question.gameQuestionId}:globalTrue`,
-      question.globalTrue,
-      'EX',
-      ONE_DAY
-    )
-    .sunionstore(notAnsweredKey, currentPlayers)
-    .expire(notAnsweredKey, ONE_DAY)
-    .smembers(notAnsweredKey)
-    .exec();
+    const { game, question } = gameStartResult;
+    const notAnsweredKey = Keys.haveNotAnswered(question.gameQuestionId);
 
-  const notAnsweredParsed = notAnsweredStrings[1].map((s) => JSON.parse(s));
+    // update game status
+    const [, , , , , notAnsweredStrings] = await pubClient
+        .pipeline()
+        .set(gameStatus, game.status, 'EX', ONE_DAY)
+        .set(Keys.totalPlayers(question.gameQuestionId), currentCount, 'EX', ONE_DAY)
+        .set(`gameQuestions:${question.gameQuestionId}:globalTrue`, question.globalTrue, 'EX', ONE_DAY)
+        .sunionstore(notAnsweredKey, currentPlayers)
+        .expire(notAnsweredKey, ONE_DAY)
+        .smembers(notAnsweredKey)
+        .exec()
 
-  logger.debug({ message: 'Game start result', gameStartResult });
+    const notAnsweredParsed = notAnsweredStrings[1].map(s => JSON.parse(s));
 
-  // save question in redis
-  await pubClient
-    .pipeline()
-    .set(currentQuestion, JSON.stringify(question), 'EX', ONE_DAY)
-    .set(currentQuestionId, question.gameQuestionId, 'EX', ONE_DAY)
-    .set(currentSequenceIndex, 1, 'EX', ONE_DAY)
-    .exec();
+    logger.debug({ message: 'Game start result', gameStartResult });
 
-  return {
-    ...gameStartResult,
-    currentCount,
-    haveNotAnswered: notAnsweredParsed,
-  };
+    // save question in redis
+    await pubClient
+        .pipeline()
+        .set(currentQuestion, JSON.stringify(question), 'EX', ONE_DAY)
+        .set(currentQuestionId, question.gameQuestionId, 'EX', ONE_DAY)
+        .set(currentSequenceIndex, 1, 'EX', ONE_DAY)
+        .exec()
+
+    return {
+        ...gameStartResult,
+        currentCount,
+        haveNotAnswered: notAnsweredParsed
+    };
 };
 
 export default startGame;

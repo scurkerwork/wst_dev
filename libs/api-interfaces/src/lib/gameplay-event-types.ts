@@ -1,5 +1,4 @@
 export const PLAYER_JOINED_GAME = 'PlayerJoinedGame';
-export const ONE_LINERS = 'OneLiners';
 export const PLAYER_LEFT_GAME = 'PlayerLeftGame';
 export const REMOVE_PLAYER = 'RemovePlayer';
 export const UPDATE_INACTIVE = 'UpdateInactivePlayers';
@@ -27,4 +26,4 @@ export const GAME_FINISHED = 'GameFinished';
 export const HOST_LEFT_NO_RESULTS = 'HostLeftNoResults';
 export const HOST_LEFT = 'HostLeft';
 export const FUN_FACTS = 'FunFacts';
-export const FETCH_MOST_SIMILAR = 'FetchMostSimilar';
+export const FETCH_MOST_SIMILAR = 'FetchMostSimilar'

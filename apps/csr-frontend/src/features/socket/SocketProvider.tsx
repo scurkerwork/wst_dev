@@ -153,10 +153,6 @@ export const SocketProvider: React.FC = ({ children }) => {
 
       connection.io.on('reconnect_failed', () => {
         console.log('reconnect failed');
-        clear();
-        history.push('/'); // nav home
-        connection.close(); // close  and delete the socket
-        setSocket(null);
       });
 
       connection.io.on('reconnect', () => {
